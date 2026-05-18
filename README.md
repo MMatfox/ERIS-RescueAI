@@ -15,3 +15,9 @@ Dashboard : NextJS, Supabase
 
 AI : Rule-based, Machine Learning Local Model, LLM Cloud-based Model  
 
+
+Firt week work
+
+- We look how to receive SOSApp Infos
+- We Create API to receive the informations 
+
