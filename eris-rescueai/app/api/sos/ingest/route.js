@@ -17,14 +17,14 @@ export async function POST(request) {
     let isDuplicate = false;
     try {
       const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
-      const { data: recentEvents } = await supabase
-        .from('sos_events')
+      const { data: recentAlerts } = await supabase
+        .from('sos_alerts')
         .select('id')
-        .eq('device_id', deviceId)
+        .eq('last_name', deviceId)
         .gt('created_at', twoMinutesAgo)
         .limit(1);
 
-      if (recentEvents && recentEvents.length > 0) {
+      if (recentAlerts && recentAlerts.length > 0) {
         isDuplicate = true;
       }
     } catch (err) {
@@ -93,28 +93,62 @@ export async function POST(request) {
       aiRecommendation = `[DOUBLON FILTRÉ] ` + aiRecommendation;
     }
 
-    // 4. Insert into Supabase
+    // 4. Insert into Supabase (sos_alerts table)
+    let notes = 'Manual SOS alert triggered';
+    if (crashDetected) {
+      notes = 'AUTOMATIC SOS: VEHICLE CRASH CONFIRMED';
+    } else if (fallDetected && inactivity) {
+      notes = 'AUTOMATIC SOS: FALL & PROLONGED INACTIVITY DETECTED';
+    } else if (fallDetected) {
+      notes = 'AUTOMATIC SOS: FALL CONFIRMED';
+    } else if (inactivity) {
+      notes = 'AUTOMATIC SOS: PROLONGED IMMOBILITY';
+    }
+
+    if (sensorData.impact && sensorData.impact !== 'none') {
+      notes += ` (Impact: ${sensorData.impact})`;
+    }
+
     const { data, error } = await supabase
-      .from('sos_events')
+      .from('sos_alerts')
       .insert([
         {
-          device_id: deviceId,
+          user_id: 'd9999999-e999-f999-a999-b99999999999',
           latitude: lat,
           longitude: lng,
-          raw_payload: sensorData,
-          is_duplicate: isDuplicate,
-          priority_score: priorityScore,
+          altitude: 0,
+          battery_level: battery,
+          notes: notes,
           status: 'pending',
-          ai_recommendation: aiRecommendation
+          transmission_method: 'INTERNET',
+          first_name: 'Simulated',
+          last_name: deviceId,
+          blood_type: 'O+',
+          allergies: 'None',
+          medical_conditions: 'None',
+          current_condition: 'Healthy'
         }
       ])
-      .select(); 
+      .select();
 
     if (error) {
       throw error;
     }
 
-    return NextResponse.json({ success: true, message: 'SOS received & classified', data: data }, { status: 201 });
+    const mappedData = data.map(alert => ({
+      id: alert.id,
+      device_id: `${alert.first_name} ${alert.last_name}`,
+      latitude: alert.latitude,
+      longitude: alert.longitude,
+      raw_payload: sensorData,
+      is_duplicate: isDuplicate,
+      priority_score: priorityScore,
+      status: alert.status,
+      ai_recommendation: aiRecommendation,
+      created_at: alert.created_at
+    }));
+
+    return NextResponse.json({ success: true, message: 'SOS received & classified (sos_alerts)', data: mappedData }, { status: 201 });
     
   } catch (error) {
     console.error("Ingestion Error:", error);
