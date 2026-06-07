@@ -789,6 +789,31 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Patient Medical Dossier */}
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2.5">
+                <span className="text-xs font-semibold text-zinc-300 block">Dossier Médical de l&apos;Abonné</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
+                  <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-850/80">
+                    <span className="text-zinc-500 block mb-1 font-medium">Groupe Sanguin</span>
+                    <span className="font-mono text-rose-400 font-bold text-sm bg-rose-950/20 px-2 py-0.5 rounded border border-rose-900/40 inline-block">
+                      {selectedEvent.raw_payload?.blood_type || 'O+'}
+                    </span>
+                  </div>
+                  <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-850/80">
+                    <span className="text-zinc-500 block mb-1 font-medium">Allergies Signalées</span>
+                    <span className="text-zinc-300 font-semibold">
+                      {selectedEvent.raw_payload?.allergies && selectedEvent.raw_payload.allergies !== 'None' ? selectedEvent.raw_payload.allergies : 'Aucune allergie connue'}
+                    </span>
+                  </div>
+                  <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-850/80">
+                    <span className="text-zinc-500 block mb-1 font-medium">Antécédents / Maladies</span>
+                    <span className="text-zinc-300 font-semibold">
+                      {selectedEvent.raw_payload?.medical_conditions && selectedEvent.raw_payload.medical_conditions !== 'None' ? selectedEvent.raw_payload.medical_conditions : 'Aucun antécédent majeur'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Raw JSON Payload */}
               <div className="space-y-1.5">
                 <span className="text-xs font-semibold text-zinc-300 block">Payload JSON Ingesté</span>

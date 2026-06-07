@@ -12,6 +12,7 @@ Technologies utilisées :
 Dashboard : NextJS, Supabase
 
 AI : Rule-based, Machine Learning Local Model, LLM Cloud-based Model
+Pour l'instant : Moteur RescueAI Local (Arbre de décision, Heuristiques pondérées, Analyse multi-facteurs)
 
 Firt week work
 
@@ -124,3 +125,18 @@ Exemple de payload envoyé par l'application cliente :
 
 - **GET** : Récupère la liste ordonnée de tous les signaux enregistrés.
 - **PATCH** : Met à jour le statut ou le flag de doublon d'un signal spécifique via son ID UUID.
+
+---
+
+## Architecture & Évolution de l'IA
+
+Toute la logique d'analyse et de génération de recommandations personnalisées du système est centralisée dans **un seul fichier** :
+👉 [localAiEngine.js](./eris-rescueai/lib/ai/localAiEngine.js)
+
+Cette centralisation offre une grande flexibilité pour les étapes futures du projet :
+1. **Facilité de modification** : La logique actuelle d'arbre de décision et d'heuristiques locales peut être ajustée rapidement dans ce fichier unique.
+2. **Intégration d'un LLM existant** : Nous prévoyons d'expérimenter avec un modèle de langage (LLM) externe déjà existant (comme Gemini ou OpenAI) pour générer des diagnostics encore plus fluides.
+3. **Création de notre propre IA** : À terme, nous souhaitons concevoir et entraîner notre propre modèle d'IA local.
+
+Grâce à cette abstraction, toute modification ou changement complet de technologie d'IA se fera uniquement dans ce fichier, sans nécessiter de retoucher aux API d'ingestion, à la base de données Supabase ou à l'interface graphique.
+

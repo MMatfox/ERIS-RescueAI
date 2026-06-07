@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { calculatePriorityScore, generateRecommendation } from '@/lib/ai/localAiEngine';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -45,70 +46,27 @@ export async function GET() {
         return timeDiff < twoMinutes && new Date(otherAlert.created_at) < new Date(alert.created_at);
       });
 
-      // 3. Rule-Based Triage Score Calculation
-      let priorityScore = 15;
-      const reasons = [];
+      // 3. Score & Recommendation calculation using local AI Engine
+      const preparedAlert = {
+        ...alert,
+        is_duplicate: isDuplicate,
+        raw_payload: {
+          battery: alert.battery_level,
+          impact: impact,
+          fall_detected: fallDetected,
+          crash_detected: crashDetected,
+          inactivity: inactivity,
+          shake_detected: shakeDetected
+        }
+      };
 
-      if (impact === 'high') {
-        priorityScore += 20;
-        reasons.push("Impact élevé");
-      } else if (impact === 'extreme') {
-        priorityScore += 35;
-        reasons.push("Impact extrême");
-      }
+      const priorityScore = calculatePriorityScore(
+        preparedAlert.raw_payload,
+        alert.battery_level,
+        alert.medical_conditions
+      );
 
-      if (crashDetected) {
-        priorityScore += 35;
-        reasons.push("Crash véhicule");
-      }
-
-      if (fallDetected) {
-        priorityScore += 25;
-        reasons.push("Chute détectée");
-      }
-
-      if (inactivity) {
-        priorityScore += 15;
-        reasons.push("Inactivité prolongée");
-      }
-
-      if (alert.battery_level !== null && alert.battery_level !== undefined && alert.battery_level < 20) {
-        priorityScore += 15;
-        reasons.push(`Batterie faible (${alert.battery_level}%)`);
-      }
-
-      priorityScore = Math.min(priorityScore, 100);
-
-      // 4. Generate French AI Recommendation
-      let aiRecommendation = '';
-      if (crashDetected) {
-        aiRecommendation = `🚨 ALERTE CRASH VÉHICULE : Décélération violente détectée (${reasons.join(', ')}). Priorité maximale. Dépêcher immédiatement les services d'urgence routière avec équipement de désincarcération.`;
-      } else if (fallDetected && inactivity) {
-        aiRecommendation = `⚠️ URGENCE CHUTE & INACTIVITÉ : Chute brutale suivie d'une immobilité prolongée. Suspicion de traumatisme crânien ou perte de connaissance. Envoyer une ambulance en urgence absolue.`;
-      } else if (fallDetected) {
-        aiRecommendation = `⚠️ ALERTE CHUTE : Chute détectée. L'utilisateur bouge encore mais peut être blessé. Contacter l'utilisateur par téléphone pour confirmation ou envoyer une équipe de secours.`;
-      } else if (inactivity) {
-        aiRecommendation = `ℹ️ INACTIVITÉ SUSPECTE : Absence de mouvement. Vérifier l'état de santé du porteur ou s'il s'agit d'un oubli d'appareil.`;
-      } else {
-        const sourceStr = shakeDetected ? 'secousse de l\'appareil' : 'bouton SOS';
-        aiRecommendation = `🆘 SOS MANUEL : Alerte déclenchée volontairement par l'utilisateur via ${sourceStr}. Procéder aux appels de levée de doute et déployer les secours de secteur si injoignable.`;
-      }
-
-      if (alert.battery_level !== null && alert.battery_level !== undefined && alert.battery_level < 20) {
-        aiRecommendation += ` (Note: Batterie critique à ${alert.battery_level}%. Risque de coupure de signal imminent.)`;
-      }
-
-      if (isDuplicate) {
-        aiRecommendation = `[DOUBLON FILTRÉ] ` + aiRecommendation;
-      }
-
-      // Add medical metadata to recommendations if available
-      if (alert.medical_conditions && alert.medical_conditions !== 'None') {
-        aiRecommendation += ` [Médical: ${alert.medical_conditions}]`;
-      }
-      if (alert.blood_type && alert.blood_type !== 'Unknown') {
-        aiRecommendation += ` [Groupe Sanguin: ${alert.blood_type}]`;
-      }
+      const aiRecommendation = generateRecommendation(preparedAlert);
 
       return {
         id: alert.id,
