@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "api:setup": "node scripts/setup-api-keys.js",
+    "api:list": "node scripts/manage-api-keys.js list",
+    "api:create": "node scripts/manage-api-keys.js create",
+    "api:revoke": "node scripts/manage-api-keys.js revoke",
+    "api:test": "node scripts/test-api-keys.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",

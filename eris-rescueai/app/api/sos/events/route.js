@@ -1,13 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { calculatePriorityScore, generateRecommendation } from '@/lib/ai/localAiEngine';
+import { authenticateApiKey } from '@/lib/auth/middleware';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export async function GET() {
+export async function GET(request) {
   try {
+    // 🔐 API Key Authentication
+    const auth = await authenticateApiKey(request);
+    if (!auth.isValid) {
+      return auth.error;
+    }
+
     // Pointing to the other team's database 'sos_alerts'
     const { data, error } = await supabase
       .from('sos_alerts')
