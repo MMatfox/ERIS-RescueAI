@@ -35,6 +35,8 @@ export default function Home() {
       const json = await response.json();
       if (json.success) {
         setEvents(json.data || []);
+      } else {
+        console.error("Erreur:", json.error);
       }
     } catch (err) {
       console.error("Error fetching events:", err);
@@ -126,7 +128,9 @@ export default function Home() {
     try {
       const response = await fetch('/api/sos/ingest', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(payload)
       });
       const json = await response.json();

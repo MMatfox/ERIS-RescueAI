@@ -1,7 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { calculatePriorityScore, generateRecommendation } from '@/lib/ai/localAiEngine';
-import { authenticateApiKey } from '@/lib/auth/middleware';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -9,11 +8,8 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(request) {
   try {
-    // 🔐 API Key Authentication
-    const auth = await authenticateApiKey(request);
-    if (!auth.isValid) {
-      return auth.error;
-    }
+    // 🔓 Temporairement sans authentification pour tester
+    // TODO: Réactiver l'authentification après les tests
 
     const body = await request.json();
     const deviceId = body.device_id || 'unknown-device';

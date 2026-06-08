@@ -4,14 +4,21 @@
  * Utilitaire pour gérer les clés API
  * 
  * Usage:
- *   node scripts/manage-api-keys.js list              # Lister les clés
- *   node scripts/manage-api-keys.js create <name>     # Créer une nouvelle clé
- *   node scripts/manage-api-keys.js revoke <id>       # Désactiver une clé
- *   node scripts/manage-api-keys.js delete <id>       # Supprimer une clé
+ *   npm run api:list              # Lister les clés
+ *   npm run api:create            # Créer une nouvelle clé
+ *   npm run api:revoke            # Désactiver une clé
  */
 
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+
+// Charger .env.local
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
