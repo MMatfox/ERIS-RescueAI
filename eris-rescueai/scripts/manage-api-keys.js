@@ -1,21 +1,11 @@
 #!/usr/bin/env node
 
-/**
- * Utilitaire pour gérer les clés API
- * 
- * Usage:
- *   npm run api:list              # Lister les clés
- *   npm run api:create            # Créer une nouvelle clé
- *   npm run api:revoke            # Désactiver une clé
- */
-
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
+import { generateApiKey, hashApiKey } from '../lib/auth/apiKey.js';
 
-// Charger .env.local
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
@@ -29,15 +19,6 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
-
-async function hashApiKey(apiKey) {
-  return crypto.createHash('sha256').update(apiKey).digest('hex');
-}
-
-function generateApiKey() {
-  const randomBytes = crypto.randomBytes(32).toString('hex');
-  return `sos_${randomBytes}`;
-}
 
 async function listKeys() {
   console.log('\n📋 Active API Keys\n');

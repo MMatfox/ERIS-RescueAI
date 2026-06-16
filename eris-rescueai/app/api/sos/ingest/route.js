@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { calculatePriorityScore, generateRecommendation } from '@/lib/ai/localAiEngine';
+import { authenticateApiKey } from '@/lib/auth/middleware';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -8,8 +9,11 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(request) {
   try {
-    // 🔓 Temporairement sans authentification pour tester
-    // TODO: Réactiver l'authentification après les tests
+    // Enforce API Key authentication
+    const auth = await authenticateApiKey(request);
+    if (!auth.isValid) {
+      return auth.error;
+    }
 
     const body = await request.json();
     const deviceId = body.device_id || 'unknown-device';
@@ -17,7 +21,7 @@ export async function POST(request) {
     const lng = body.lng || 0;
     const sensorData = body.sensor_data || {};
 
-    // 1. Duplicate Detection (check if same device sent an alert in the last 2 minutes)
+    // Deduplicate: check if this device sent an alert in the last 2 minutes
     let isDuplicate = false;
     try {
       const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
@@ -40,7 +44,7 @@ export async function POST(request) {
     const crashDetected = sensorData.crash_detected === true || sensorData.crash_detected === 'true';
     const inactivity = sensorData.inactivity === true || sensorData.inactivity === 'true';
 
-    // 2. Generate Technical Notes
+    // Construct technical status notes based on sensor triggers
     let notes = 'Manual SOS alert triggered';
     if (crashDetected) {
       notes = 'AUTOMATIC SOS: VEHICLE CRASH CONFIRMED';
@@ -56,7 +60,6 @@ export async function POST(request) {
       notes += ` (Impact: ${sensorData.impact})`;
     }
 
-    // 3. Score & Recommendation calculation using local AI Engine
     const preparedAlert = {
       latitude: lat,
       longitude: lng,

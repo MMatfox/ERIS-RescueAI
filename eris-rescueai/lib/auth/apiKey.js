@@ -1,19 +1,12 @@
 import crypto from 'crypto';
 
-/**
- * Génère une clé API aléatoire et sécurisée
- * @returns {string} Une clé API au format: sos_XXXXXXXXXXXXXXXXXXXXXXXX
- */
+// Generates a cryptographically secure API key prefixed with "sos_"
 export function generateApiKey() {
   const randomBytes = crypto.randomBytes(32).toString('hex');
   return `sos_${randomBytes}`;
 }
 
-/**
- * Hash une clé API pour la stocker de manière sécurisée
- * @param {string} apiKey - La clé API en clair
- * @returns {string} La clé hashée
- */
+// Hashes an API key using SHA-256 for secure database storage
 export function hashApiKey(apiKey) {
   return crypto
     .createHash('sha256')
@@ -21,24 +14,15 @@ export function hashApiKey(apiKey) {
     .digest('hex');
 }
 
-/**
- * Compare une clé API avec son hash
- * @param {string} apiKey - La clé API en clair
- * @param {string} hash - Le hash stocké
- * @returns {boolean} true si la clé correspond au hash
- */
+// Verifies if the provided plain API key matches the stored hash
 export function verifyApiKey(apiKey, hash) {
   const computedHash = hashApiKey(apiKey);
   return computedHash === hash;
 }
 
-/**
- * Middleware pour vérifier les clés API
- * @param {Request} request - La requête Next.js
- * @returns {Object} {isValid: boolean, apiKeyHash: string, error?: string}
- */
+// Extracts and validates the presence of the API key from request headers
 export function validateApiKey(request) {
-  // Récupérer la clé API depuis les headers
+  
   const apiKey = request.headers.get('x-api-key') || 
                  request.headers.get('Authorization')?.replace('Bearer ', '');
 
@@ -49,7 +33,6 @@ export function validateApiKey(request) {
     };
   }
 
-  // Hasher la clé pour la comparaison
   const keyHash = hashApiKey(apiKey);
 
   return {

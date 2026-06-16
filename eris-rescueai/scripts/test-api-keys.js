@@ -1,17 +1,9 @@
 #!/usr/bin/env node
 
-/**
- * Test des endpoints API avec authentification par clé API
- * 
- * Usage: npm run api:test
- */
-
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fetch from 'node-fetch';
 
-// Charger .env.local
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
@@ -23,7 +15,6 @@ async function testApiEndpoints() {
   console.log(`API Base: ${API_BASE}\n`);
   console.log('='.repeat(80));
 
-  // Test 1 : Sans clé API
   console.log('\n❌ TEST 1: Requête SANS clé API');
   console.log('---');
   try {
@@ -35,7 +26,6 @@ async function testApiEndpoints() {
     console.error('Error:', err.message);
   }
 
-  // Test 2 : Avec clé API valide (simulation)
   console.log('\n✅ TEST 2: Requête AVEC clé API valide');
   console.log('---');
   const validApiKey = process.env.TEST_API_KEY || 'sos_INVALID_FOR_DEMO';
@@ -57,7 +47,6 @@ async function testApiEndpoints() {
     console.error('Error:', err.message);
   }
 
-  // Test 3 : Ingest avec clé API
   console.log('\n✅ TEST 3: POST /api/sos/ingest avec clé API');
   console.log('---');
   
@@ -92,7 +81,6 @@ async function testApiEndpoints() {
     console.error('Error:', err.message);
   }
 
-  // Test 4 : Avec clé invalide
   console.log('\n❌ TEST 4: Requête avec clé API INVALIDE');
   console.log('---');
   try {
@@ -113,5 +101,4 @@ async function testApiEndpoints() {
   console.log('\n✨ Tests complètés !\n');
 }
 
-// Run tests
 testApiEndpoints().catch(console.error);

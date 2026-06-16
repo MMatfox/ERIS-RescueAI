@@ -1,15 +1,10 @@
 #!/usr/bin/env node
 
-/**
- * Génère une clé API de test avec son hash SHA256
- * Usage: npm run api:create-dev-key
- */
-
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import { generateApiKey, hashApiKey } from '../lib/auth/apiKey.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,15 +20,6 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-function generateApiKey() {
-  const randomBytes = crypto.randomBytes(32).toString('hex');
-  return `sos_${randomBytes}`;
-}
-
-function hashApiKey(apiKey) {
-  return crypto.createHash('sha256').update(apiKey).digest('hex');
-}
-
 async function createDevKey() {
   try {
     console.log('🔑 Creating development API key...\n');
@@ -44,7 +30,6 @@ async function createDevKey() {
     console.log(`Generated Key: ${apiKey}`);
     console.log(`Key Hash:      ${keyHash}\n`);
 
-    // Insert into Supabase
     const { data, error } = await supabase
       .from('api_keys')
       .insert([

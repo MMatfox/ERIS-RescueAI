@@ -1,21 +1,14 @@
-/**
- * Moteur d'IA local pour le système ERIS-RescueAI.
- * Évalue la priorité des SOS et génère des recommandations de secours personnalisées
- * en fonction de la télémétrie, de l'état de l'appareil et du profil médical du patient.
- */
-
-/**
- * Calcule le score de priorité de l'alerte (0 à 100).
- */
+ 
+// Calculates the priority score (0-100) of a SOS alert based on telemetry data and medical conditions
 export function calculatePriorityScore(sensorData, batteryLevel, medicalConditions) {
-  let score = 15; // Score de base pour tout déclenchement SOS
+  let score = 15; // Base score for any triggered SOS signal 
 
   const impact = sensorData.impact || 'none';
   const crashDetected = sensorData.crash_detected === true || sensorData.crash_detected === 'true';
   const fallDetected = sensorData.fall_detected === true || sensorData.fall_detected === 'true';
   const inactivity = sensorData.inactivity === true || sensorData.inactivity === 'true';
 
-  // 1. Évaluation par rapport aux capteurs physiques
+  // 1. Evaluate physical sensor signals (accel, crash, fall, inactivity)
   if (impact === 'low') {
     score += 5;
   } else if (impact === 'high') {
@@ -28,12 +21,12 @@ export function calculatePriorityScore(sensorData, batteryLevel, medicalConditio
   if (fallDetected) score += 25;
   if (inactivity) score += 15;
 
-  // 2. Évaluation de l'état de l'appareil
+  // 2. Adjust priority if battery level is critically low
   if (batteryLevel !== null && batteryLevel !== undefined && batteryLevel < 20) {
     score += 15;
   }
 
-  // 3. Évaluation du dossier médical de l'abonné
+  // 3. Escalates score for high-risk pre-existing medical conditions
   if (medicalConditions && medicalConditions !== 'None' && medicalConditions !== 'Unknown') {
     const medLower = medicalConditions.toLowerCase();
     if (
@@ -44,23 +37,20 @@ export function calculatePriorityScore(sensorData, batteryLevel, medicalConditio
       medLower.includes('diabète') ||
       medLower.includes('diabetes')
     ) {
-      score += 15; // Facteur aggravant pour pathologies à haut risque
+      score += 15; 
     } else {
-      score += 5; // Autre pathologie signalée
+      score += 5; 
     }
   }
 
   return Math.min(score, 100);
 }
 
-/**
- * Génère une recommandation d'action ultra-personnalisée en français.
- */
+// Generates a descriptive French recommendation based on telemetry, location, and patient profile
 export function generateRecommendation(alert) {
   const sensorData = alert.raw_payload || {};
   const notesLower = (alert.notes || '').toLowerCase();
   
-  // Normalisation des indicateurs de capteurs (de la DB ou du payload)
   const crashDetected = 
     sensorData.crash_detected === true || 
     sensorData.crash_detected === 'true' || 
@@ -96,7 +86,7 @@ export function generateRecommendation(alert) {
 
   const parts = [];
 
-  // 1. ANALYSE ET PRÉ-DIAGNOSTIC DE L'URGENCE (BASÉ SUR LES CAPTEURS)
+  // 1. Analyze sensors to build the core diagnosis of the emergency
   if (crashDetected) {
     let crashMsg = "🚨 URGENCE CRASH : Décélération violente détectée.";
     if (impact === 'extreme') {
@@ -116,7 +106,7 @@ export function generateRecommendation(alert) {
     parts.push(`🆘 SOS MANUEL : Alerte déclenchée volontairement par le porteur depuis son ${sourceStr}.`);
   }
 
-  // 2. CONSIGNES LIÉES AU PROFIL MÉDICAL PERSONNALISÉ
+  // 2. Append instructions according to the patient's medical dossier
   if (medicalConditions && medicalConditions !== 'None' && medicalConditions !== 'Unknown') {
     const medLower = medicalConditions.toLowerCase();
     let medInstruction = "";
@@ -134,17 +124,17 @@ export function generateRecommendation(alert) {
     parts.push(medInstruction);
   }
 
-  // Ajout des informations d'allergies
+  // Allergen checks
   if (allergies && allergies !== 'None' && allergies !== 'Unknown') {
     parts.push(`🚫 ALERTE ALLERGIE : Antécédent d'allergie signalé (${allergies}). Alerter le médecin régulateur avant toute injection ou prescription.`);
   }
 
-  // Ajout du groupe sanguin
+  // Blood type info
   if (bloodType && bloodType !== 'Unknown' && bloodType !== 'None') {
     parts.push(`🩸 GROUPE SANGUIN : Patient enregistré sous le groupe ${bloodType}.`);
   }
 
-  // 3. CONSIGNES DE LOCALISATION SPÉCIFIQUES (CONTEXTE VIETNAM)
+  // 3. Add location context guidelines (Vietnam metropolitan specific regions)
   if (lat !== 0 && lng !== 0) {
     let locStr = "";
     if (lat >= 15.9 && lat <= 16.2 && lng >= 108.0 && lng <= 108.3) {
@@ -159,12 +149,11 @@ export function generateRecommendation(alert) {
     parts.push(locStr);
   }
 
-  // 4. CONSIGNES TECHNIQUES / ÉTAT DE L'APPAREIL
+  // 4. Handle battery depletion warnings
   if (battery !== null && battery !== undefined && battery < 20) {
     parts.push(`🔋 BATTERIE CRITIQUE (${battery}%) : Risque imminent d'extinction de l'appareil. Le signal GPS et la transmission des capteurs pourraient cesser d'ici quelques minutes. Lancer immédiatement l'appel téléphonique de secours sur l'appareil.`);
   }
 
-  // 5. DOUBLE CONTRÔLE (DOUBLONS)
   if (alert.is_duplicate) {
     return "[DOUBLON FILTRÉ] " + parts.join(' ');
   }

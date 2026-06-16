@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { calculatePriorityScore, generateRecommendation } from '@/lib/ai/localAiEngine';
+import { authenticateApiKey } from '@/lib/auth/middleware';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -8,8 +9,12 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function GET(request) {
   try {
-    // 🔓 Temporairement sans authentification pour tester
-    // TODO: Réactiver l'authentification après les tests
+    // Enforce API Key authentication
+    const auth = await authenticateApiKey(request);
+    if (!auth.isValid) {
+      return auth.error;
+    }
+
     const { data, error } = await supabase
       .from('sos_alerts')
       .select('*')
@@ -19,11 +24,11 @@ export async function GET(request) {
       throw error;
     }
 
-    // Map 'sos_alerts' rows to the format expected by the RescueAI operator dashboard
+    // Map raw alerts rows to formatting expected by the console dashboard
     const mappedData = data.map((alert, index) => {
       const notesLower = (alert.notes || '').toLowerCase();
       
-      // 1. Detect sensor flags based on notes content
+      // Infer sensor status and fall/crash flags from textual notes
       const crashDetected = notesLower.includes('crash') || notesLower.includes('accident');
       const fallDetected = notesLower.includes('fall') || notesLower.includes('chute');
       const inactivity = notesLower.includes('inactivity') || notesLower.includes('immobilit');
@@ -38,7 +43,7 @@ export async function GET(request) {
         impact = 'low';
       }
 
-      // 2. Dynamic duplicate check (2-minute window for the same user)
+      // Deduplicate: check if same subscriber sent another alert in a 2-minute window
       const twoMinutes = 2 * 60 * 1000;
       const isDuplicate = data.some((otherAlert, otherIndex) => {
         if (otherIndex === index) return false;
@@ -47,7 +52,6 @@ export async function GET(request) {
         return timeDiff < twoMinutes && new Date(otherAlert.created_at) < new Date(alert.created_at);
       });
 
-      // 3. Score & Recommendation calculation using local AI Engine
       const preparedAlert = {
         ...alert,
         is_duplicate: isDuplicate,
@@ -104,6 +108,12 @@ export async function GET(request) {
 
 export async function PATCH(request) {
   try {
+    // Enforce API Key authentication
+    const auth = await authenticateApiKey(request);
+    if (!auth.isValid) {
+      return auth.error;
+    }
+
     const body = await request.json();
     const { id, ...updates } = body;
 
@@ -130,4 +140,4 @@ export async function PATCH(request) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
-
+

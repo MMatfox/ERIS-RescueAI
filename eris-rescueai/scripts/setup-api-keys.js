@@ -1,17 +1,10 @@
-/**
- * Script pour configurer les clés API dans Supabase
- * À exécuter une seule fois pour initialiser la table et créer les premières clés
- * 
- * Usage: npm run api:setup
- */
-
+ 
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
+import { generateApiKey, hashApiKey } from '../lib/auth/apiKey.js';
 
-// Charger .env.local
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
@@ -26,23 +19,10 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function hashApiKey(apiKey) {
-  return crypto
-    .createHash('sha256')
-    .update(apiKey)
-    .digest('hex');
-}
-
-async function generateApiKey() {
-  const randomBytes = crypto.randomBytes(32).toString('hex');
-  return `sos_${randomBytes}`;
-}
-
 async function setupApiKeys() {
   try {
     console.log('🔧 Setting up API Keys infrastructure...\n');
 
-    // 1. Vérifier que la table api_keys existe
     console.log('📋 Checking api_keys table...');
     const { data: tableCheck, error: checkError } = await supabase
       .from('api_keys')
@@ -79,7 +59,6 @@ async function setupApiKeys() {
 
     console.log('✅ api_keys table exists\n');
 
-    // 2. Générer des clés API pour les clients principaux
     console.log('🔑 Generating API Keys...\n');
 
     const clients = [
@@ -94,7 +73,6 @@ async function setupApiKeys() {
       const apiKey = await generateApiKey();
       const keyHash = await hashApiKey(apiKey);
 
-      // Toujours ajouter la clé à la liste (même si l'insertion échoue)
       const keyInfo = {
         client: client.name,
         apiKey: apiKey,
@@ -103,7 +81,6 @@ async function setupApiKeys() {
       };
       generatedKeys.push(keyInfo);
 
-      // Essayer d'insérer dans Supabase
       try {
         const { data, error } = await supabase
           .from('api_keys')
@@ -130,7 +107,6 @@ async function setupApiKeys() {
       }
     }
 
-    // 3. Afficher les clés (ATTENTION: À stocker de manière sécurisée!)
     console.log('\n' + '='.repeat(80));
     console.log('🔐 GENERATED API KEYS - STORE THESE SECURELY!');
     console.log('='.repeat(80));
@@ -152,7 +128,6 @@ async function setupApiKeys() {
 
     console.log('\n✅ API Keys setup completed!\n');
     
-    // Vérifier si les clés ont été sauvegardées
     const { data: savedKeys } = await supabase
       .from('api_keys')
       .select('client_name')
@@ -177,5 +152,4 @@ async function setupApiKeys() {
   }
 }
 
-// Exécuter le setup
 setupApiKeys();

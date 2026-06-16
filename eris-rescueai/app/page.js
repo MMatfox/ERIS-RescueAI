@@ -1,19 +1,19 @@
 'use client';
-
-import { useState, useEffect } from 'react';
+ 
+import { useState, useEffect, useCallback } from 'react';
 
 export default function Home() {
+  const apiKey = process.env.NEXT_PUBLIC_API_KEY || '';
+
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   
-  // Filters
   const [statusFilter, setStatusFilter] = useState('all');
-  const [showDuplicates, setShowDuplicates] = useState('all'); // 'all', 'no_duplicates', 'only_duplicates'
+  const [showDuplicates, setShowDuplicates] = useState('all'); 
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Simulator Form State
   const [simDevice, setSimDevice] = useState('device-vt-088');
   const [simLat, setSimLat] = useState('16.0544');
   const [simLng, setSimLng] = useState('108.2022');
@@ -25,13 +25,17 @@ export default function Home() {
   const [simulating, setSimulating] = useState(false);
   const [simResult, setSimResult] = useState(null);
 
-  // Fetch events
-  const fetchEvents = async (silent = false) => {
+  // Fetch the latest SOS events from backend API
+  const fetchEvents = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     else setRefreshing(true);
     
     try {
-      const response = await fetch('/api/sos/events');
+      const headers = {};
+      if (apiKey) {
+        headers['X-API-Key'] = apiKey;
+      }
+      const response = await fetch('/api/sos/events', { headers });
       const json = await response.json();
       if (json.success) {
         setEvents(json.data || []);
@@ -44,37 +48,39 @@ export default function Home() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [apiKey]);
 
   // Poll for new events every 6 seconds to show real-time ingestion
   useEffect(() => {
-    fetchEvents();
+    setTimeout(() => {
+      fetchEvents(true);
+    }, 0);
     const interval = setInterval(() => {
       fetchEvents(true);
     }, 6000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchEvents]);
 
-  // Sync selected event if events array updates
   useEffect(() => {
     if (selectedEvent) {
       const updated = events.find(e => e.id === selectedEvent.id);
-      if (updated) {
-        setSelectedEvent(updated);
+      if (updated && JSON.stringify(updated) !== JSON.stringify(selectedEvent)) {
+        setTimeout(() => {
+          setSelectedEvent(updated);
+        }, 0);
       }
     }
-  }, [events]);
+  }, [events, selectedEvent]);
 
-  // Load Preset in Simulator
   const loadPreset = (presetType) => {
     const randomSuffix = Math.floor(Math.random() * 900) + 100;
     
     switch (presetType) {
       case 'fall':
         setSimDevice(`device-fall-${randomSuffix}`);
-        setSimLat('16.0620'); // Da Nang center
+        setSimLat('16.0620'); 
         setSimLng('108.2150');
-        setSimBattery('18'); // low battery
+        setSimBattery('18'); 
         setSimImpact('high');
         setSimFall(true);
         setSimCrash(false);
@@ -82,7 +88,7 @@ export default function Home() {
         break;
       case 'crash':
         setSimDevice(`device-crash-${randomSuffix}`);
-        setSimLat('21.0285'); // Hanoi
+        setSimLat('21.0285'); 
         setSimLng('105.8542');
         setSimBattery('92');
         setSimImpact('extreme');
@@ -92,9 +98,9 @@ export default function Home() {
         break;
       case 'manual':
         setSimDevice(`device-manual-${randomSuffix}`);
-        setSimLat('10.8231'); // HCM City
+        setSimLat('10.8231'); 
         setSimLng('106.6297');
-        setSimBattery('5'); // critical
+        setSimBattery('5'); 
         setSimImpact('none');
         setSimFall(false);
         setSimCrash(false);
@@ -106,7 +112,7 @@ export default function Home() {
     setSimResult(null);
   };
 
-  // Submit Simulator Event
+  // Simulate sending a telemetry SOS signal to the ingest API
   const submitSimulatedEvent = async (e) => {
     e.preventDefault();
     setSimulating(true);
@@ -126,11 +132,15 @@ export default function Home() {
     };
 
     try {
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (apiKey) {
+        headers['X-API-Key'] = apiKey;
+      }
       const response = await fetch('/api/sos/ingest', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify(payload)
       });
       const json = await response.json();
@@ -147,12 +157,18 @@ export default function Home() {
     }
   };
 
-  // Update Status / Duplicate in Supabase
+  // Update event status or duplicate attribute in database
   const updateEventAttribute = async (eventId, updates) => {
     try {
+      const headers = {
+        'Content-Type': 'application/json'
+      };
+      if (apiKey) {
+        headers['X-API-Key'] = apiKey;
+      }
       const response = await fetch('/api/sos/events', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ id: eventId, ...updates })
       });
       const json = await response.json();
@@ -164,7 +180,6 @@ export default function Home() {
     }
   };
 
-  // Filter & Search logic
   const filteredEvents = events.filter(event => {
     const matchesStatus = statusFilter === 'all' || event.status === statusFilter;
     
@@ -182,7 +197,6 @@ export default function Home() {
     return matchesStatus && matchesDuplicate && matchesSearch;
   });
 
-  // Calculate Metrics
   const totalEvents = events.length;
   const activeEvents = events.filter(e => e.status === 'pending' || e.status === 'in_progress').length;
   const criticalEvents = events.filter(e => e.priority_score >= 70 && e.status !== 'resolved' && !e.is_duplicate).length;
@@ -191,7 +205,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans flex flex-col selection:bg-rose-500 selection:text-white">
-      {/* Header */}
+      { }
       <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -229,7 +243,7 @@ export default function Home() {
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
-        {/* KPI Grid */}
+        { }
         <section className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between hover:border-zinc-700 transition">
             <span className="text-xs text-zinc-400 font-medium">Alertes Actives</span>
@@ -273,10 +287,10 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Dashboard Content split layout */}
+        { }
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           
-          {/* Simulator Panel (Left Side - 1 Column) */}
+          { }
           <section className="lg:col-span-1 bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4">
             <div className="border-b border-zinc-800 pb-3 flex items-center justify-between">
               <h2 className="text-md font-semibold text-white flex items-center gap-2">
@@ -292,7 +306,7 @@ export default function Home() {
               Utilisez ce module pour envoyer des alertes simulées de l&apos;application mobile ou des boîtiers d&apos;urgence. Le système RescueAI évaluera automatiquement la priorité, détectera les doublons et générera des recommandations par IA.
             </p>
 
-            {/* Presets */}
+            { }
             <div className="space-y-2">
               <label className="text-xs font-semibold text-zinc-300">Préréglages d&apos;urgence (Vietnam) :</label>
               <div className="grid grid-cols-3 gap-2">
@@ -323,7 +337,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Ingest Form */}
+            { }
             <form onSubmit={submitSimulatedEvent} className="space-y-3 pt-2">
               <div className="space-y-1">
                 <label className="text-xs text-zinc-400 block font-medium">Device ID</label>
@@ -451,10 +465,10 @@ export default function Home() {
             </form>
           </section>
 
-          {/* Events Monitor (Right Side - 2 Columns) */}
+          { }
           <section className="lg:col-span-2 space-y-4">
             
-            {/* Filter and Search Bar */}
+            { }
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
               <div className="flex flex-col md:flex-row md:items-center gap-3 justify-between">
                 <h3 className="text-md font-semibold text-white flex items-center gap-2">
@@ -476,7 +490,7 @@ export default function Home() {
               </div>
 
               <div className="flex flex-wrap gap-4 pt-2 border-t border-zinc-800 text-xs">
-                {/* Status selector */}
+                { }
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-500">Statut :</span>
                   <div className="flex bg-zinc-950 p-0.5 rounded border border-zinc-800">
@@ -507,7 +521,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Duplicate toggle */}
+                { }
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-500">Doublons :</span>
                   <div className="flex bg-zinc-950 p-0.5 rounded border border-zinc-800">
@@ -534,7 +548,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Loading / Empty / List State */}
+            { }
             {loading ? (
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center flex flex-col items-center justify-center gap-3">
                 <svg className="animate-spin h-8 w-8 text-rose-500" fill="none" viewBox="0 0 24 24">
@@ -554,13 +568,11 @@ export default function Home() {
                 {filteredEvents.map(event => {
                   const isCritical = event.priority_score >= 70 && event.status !== 'resolved';
                   
-                  // Score color class
                   let scoreBg = 'bg-zinc-800 text-zinc-400';
                   if (event.priority_score >= 70) scoreBg = 'bg-rose-950/70 text-rose-400 border border-rose-900/60';
                   else if (event.priority_score >= 40) scoreBg = 'bg-amber-950/50 text-amber-500 border border-amber-900/50';
                   else if (event.priority_score > 0) scoreBg = 'bg-emerald-950/30 text-emerald-500 border border-emerald-900/40';
 
-                  // Status badge style
                   let statusStyle = 'bg-zinc-800 text-zinc-300';
                   if (event.status === 'pending') statusStyle = 'bg-amber-500/10 text-amber-500 border border-amber-500/25';
                   else if (event.status === 'in_progress') statusStyle = 'bg-sky-500/15 text-sky-400 border border-sky-500/25';
@@ -583,7 +595,7 @@ export default function Home() {
                             })}
                           </span>
                           
-                          {/* Badges */}
+                          { }
                           {event.is_duplicate && (
                             <span className="text-[10px] bg-zinc-850 text-zinc-500 px-2 py-0.5 rounded border border-zinc-800 uppercase font-bold tracking-wider">
                               Doublon
@@ -608,7 +620,7 @@ export default function Home() {
                       </div>
 
                       <div className="flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-2.5 md:pt-0 border-zinc-800">
-                        {/* Priority circle/badge */}
+                        { }
                         <div className={`flex flex-col items-center justify-center rounded-lg px-3 py-1.5 text-center min-w-[70px] ${scoreBg}`}>
                           <span className="text-[9px] uppercase tracking-widest font-extrabold opacity-75">Priorité</span>
                           <span className="text-lg font-black font-mono leading-tight">{event.priority_score}</span>
@@ -627,19 +639,19 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Footer */}
+      { }
       <footer className="mt-auto border-t border-zinc-800 bg-zinc-900/30 text-center py-6 text-xs text-zinc-500">
         <p>&copy; {new Date().getFullYear()} - ERIS RescueAI Backend Console &bull; Développé pour la gestion d&apos;urgence en conditions dégradées</p>
       </footer>
 
-      {/* Modal - Event Details */}
+      { }
       {selectedEvent && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
           <div 
             className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
+            { }
             <div className="border-b border-zinc-800 p-5 flex items-start justify-between bg-zinc-925 sticky top-0 z-10">
               <div>
                 <div className="flex items-center gap-2.5">
@@ -669,10 +681,10 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Body */}
+            { }
             <div className="p-6 space-y-5">
               
-              {/* AI Recommendation Alert Panel */}
+              { }
               <div className={`p-4 rounded-xl border flex gap-3 ${
                 selectedEvent.priority_score >= 70 ? 'bg-rose-950/20 border-rose-900/50 text-rose-300' :
                 selectedEvent.priority_score >= 40 ? 'bg-amber-950/25 border-amber-900/40 text-amber-300' :
@@ -687,12 +699,12 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Status and triage operations */}
+              { }
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-3.5">
                 <span className="text-xs font-semibold text-zinc-300 block">Actions de Triage</span>
                 
                 <div className="flex flex-col sm:flex-row gap-3">
-                  {/* Status update buttons */}
+                  { }
                   <div className="flex-1 space-y-1">
                     <span className="text-[11px] text-zinc-500 block">Changer le statut :</span>
                     <div className="grid grid-cols-3 gap-2">
@@ -717,7 +729,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Duplicate state */}
+                  { }
                   <div className="sm:w-[180px] space-y-1">
                     <span className="text-[11px] text-zinc-500 block">Gestion des doublons :</span>
                     <button
@@ -731,9 +743,9 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Grid split for technical specifications */}
+              { }
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Geolocation info */}
+                { }
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2.5">
                   <span className="text-xs font-semibold text-zinc-300 block">Coordonnées Géographiques</span>
                   <div className="space-y-1 text-xs">
@@ -763,7 +775,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Score breakdown */}
+                { }
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2.5">
                   <span className="text-xs font-semibold text-zinc-300 block">Évaluation de Priorité</span>
                   <div className="space-y-1 text-xs">
@@ -793,7 +805,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Patient Medical Dossier */}
+              { }
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2.5">
                 <span className="text-xs font-semibold text-zinc-300 block">Dossier Médical de l&apos;Abonné</span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
@@ -818,7 +830,7 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Raw JSON Payload */}
+              { }
               <div className="space-y-1.5">
                 <span className="text-xs font-semibold text-zinc-300 block">Payload JSON Ingesté</span>
                 <pre className="bg-zinc-950 border border-zinc-850 rounded-xl p-4 text-xs font-mono text-zinc-400 overflow-x-auto max-h-[160px]">
@@ -828,7 +840,7 @@ export default function Home() {
 
             </div>
 
-            {/* Footer */}
+            { }
             <div className="border-t border-zinc-800 p-4 bg-zinc-925 flex justify-end">
               <button
                 onClick={() => setSelectedEvent(null)}

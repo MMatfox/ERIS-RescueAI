@@ -5,13 +5,9 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-/**
- * Middleware pour authentifier les requêtes API avec une clé API
- * @param {Request} request - La requête Next.js
- * @returns {Object} {isValid: boolean, error?: NextResponse}
- */
+// Authenticates incoming requests using API key headers or bearer tokens
 export async function authenticateApiKey(request) {
-  // Valider la présence et le format de la clé
+  
   const validation = validateApiKey(request);
   
   if (!validation.isValid) {
@@ -24,8 +20,22 @@ export async function authenticateApiKey(request) {
     };
   }
 
+  const incomingKey = request.headers.get('x-api-key') || 
+                      request.headers.get('Authorization')?.replace('Bearer ', '');
+
+  // Fast-path: Check against the shared environment key to bypass DB calls
+  if (process.env.API_KEY && incomingKey === process.env.API_KEY) {
+    return {
+      isValid: true,
+      clientId: 'shared-client',
+      clientName: 'shared-client',
+      rateLimit: 1000
+    };
+  }
+
+  // Slow-path: Look up key hash in the Supabase database
   try {
-    // Vérifier la clé dans Supabase
+    
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     const { data: apiKeyRecord, error } = await supabase
@@ -45,7 +55,6 @@ export async function authenticateApiKey(request) {
       };
     }
 
-    // Clé valide
     return {
       isValid: true,
       clientId: apiKeyRecord.id,
