@@ -9,7 +9,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(request) {
   try {
-    // Enforce API Key authentication
+    // Auth requise
     const auth = await authenticateApiKey(request);
     if (!auth.isValid) {
       return auth.error;
@@ -21,7 +21,7 @@ export async function POST(request) {
     const lng = body.lng || 0;
     const sensorData = body.sensor_data || {};
 
-    // Deduplicate: check if this device sent an alert in the last 2 minutes
+    // Anti-spam/doublon de l'appareil (fenêtre de 2min)
     let isDuplicate = false;
     try {
       const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
@@ -44,7 +44,7 @@ export async function POST(request) {
     const crashDetected = sensorData.crash_detected === true || sensorData.crash_detected === 'true';
     const inactivity = sensorData.inactivity === true || sensorData.inactivity === 'true';
 
-    // Construct technical status notes based on sensor triggers
+    // Génère une note auto selon les triggers reçus
     let notes = 'Manual SOS alert triggered';
     if (crashDetected) {
       notes = 'AUTOMATIC SOS: VEHICLE CRASH CONFIRMED';

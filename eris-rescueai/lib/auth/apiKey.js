@@ -1,12 +1,12 @@
 import crypto from 'crypto';
 
-// Generates a cryptographically secure API key prefixed with "sos_"
+// Clé API sécurisée avec préfixe "sos_"
 export function generateApiKey() {
   const randomBytes = crypto.randomBytes(32).toString('hex');
   return `sos_${randomBytes}`;
 }
 
-// Hashes an API key using SHA-256 for secure database storage
+// Hash SHA-256 pour stocker proprement en BDD
 export function hashApiKey(apiKey) {
   return crypto
     .createHash('sha256')
@@ -14,13 +14,13 @@ export function hashApiKey(apiKey) {
     .digest('hex');
 }
 
-// Verifies if the provided plain API key matches the stored hash
+// Compare la clé reçue avec le hash stocké
 export function verifyApiKey(apiKey, hash) {
   const computedHash = hashApiKey(apiKey);
   return computedHash === hash;
 }
 
-// Extracts and validates the presence of the API key from request headers
+// Récupère et valide la clé dans les headers (x-api-key ou Bearer)
 export function validateApiKey(request) {
   
   const apiKey = request.headers.get('x-api-key') || 

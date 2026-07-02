@@ -9,7 +9,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function GET(request) {
   try {
-    // Enforce API Key authentication
+    // Auth requise
     const auth = await authenticateApiKey(request);
     if (!auth.isValid) {
       return auth.error;
@@ -24,11 +24,11 @@ export async function GET(request) {
       throw error;
     }
 
-    // Map raw alerts rows to formatting expected by the console dashboard
+    // Formatage des données pour le dashboard
     const mappedData = data.map((alert, index) => {
       const notesLower = (alert.notes || '').toLowerCase();
       
-      // Infer sensor status and fall/crash flags from textual notes
+      // Extraction du type d'incident à partir des notes
       const crashDetected = notesLower.includes('crash') || notesLower.includes('accident');
       const fallDetected = notesLower.includes('fall') || notesLower.includes('chute');
       const inactivity = notesLower.includes('inactivity') || notesLower.includes('immobilit');
@@ -43,7 +43,7 @@ export async function GET(request) {
         impact = 'low';
       }
 
-      // Deduplicate: check if same subscriber sent another alert in a 2-minute window
+      // Évite les doublons : même user dans une fenêtre de 2 minutes
       const twoMinutes = 2 * 60 * 1000;
       const isDuplicate = data.some((otherAlert, otherIndex) => {
         if (otherIndex === index) return false;
@@ -108,7 +108,7 @@ export async function GET(request) {
 
 export async function PATCH(request) {
   try {
-    // Enforce API Key authentication
+    // Auth requise
     const auth = await authenticateApiKey(request);
     if (!auth.isValid) {
       return auth.error;

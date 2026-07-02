@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Authenticates incoming requests using API key headers or bearer tokens
+// Auth via clé API ou token Bearer
 export async function authenticateApiKey(request) {
   
   const validation = validateApiKey(request);
@@ -23,7 +23,7 @@ export async function authenticateApiKey(request) {
   const incomingKey = request.headers.get('x-api-key') || 
                       request.headers.get('Authorization')?.replace('Bearer ', '');
 
-  // Fast-path: Check against the shared environment key to bypass DB calls
+  // Chemin rapide : évite un appel BDD si c'est la clé globale dev/prod
   if (process.env.API_KEY && incomingKey === process.env.API_KEY) {
     return {
       isValid: true,
@@ -33,7 +33,7 @@ export async function authenticateApiKey(request) {
     };
   }
 
-  // Slow-path: Look up key hash in the Supabase database
+  // Sinon, check dans Supabase
   try {
     
     const supabase = createClient(supabaseUrl, supabaseKey);

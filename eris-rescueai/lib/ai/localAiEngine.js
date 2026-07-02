@@ -1,5 +1,4 @@
- 
-// Calculates the priority score (0-100) of a SOS alert based on telemetry data and medical conditions
+ // Calcul de la priorité (0-100) selon les capteurs et l'historique médical
 export function calculatePriorityScore(sensorData, batteryLevel, medicalConditions) {
   let score = 15; // Base score for any triggered SOS signal 
 
@@ -8,7 +7,7 @@ export function calculatePriorityScore(sensorData, batteryLevel, medicalConditio
   const fallDetected = sensorData.fall_detected === true || sensorData.fall_detected === 'true';
   const inactivity = sensorData.inactivity === true || sensorData.inactivity === 'true';
 
-  // 1. Evaluate physical sensor signals (accel, crash, fall, inactivity)
+  // 1. Capteurs physiques (accéléromètre, chute, etc.)
   if (impact === 'low') {
     score += 5;
   } else if (impact === 'high') {
@@ -21,12 +20,12 @@ export function calculatePriorityScore(sensorData, batteryLevel, medicalConditio
   if (fallDetected) score += 25;
   if (inactivity) score += 15;
 
-  // 2. Adjust priority if battery level is critically low
+  // 2. Bonus si la batterie est critique
   if (batteryLevel !== null && batteryLevel !== undefined && batteryLevel < 20) {
     score += 15;
   }
 
-  // 3. Escalates score for high-risk pre-existing medical conditions
+  // 3. Boost de priorité pour les pathologies à risque
   if (medicalConditions && medicalConditions !== 'None' && medicalConditions !== 'Unknown') {
     const medLower = medicalConditions.toLowerCase();
     if (
@@ -46,7 +45,7 @@ export function calculatePriorityScore(sensorData, batteryLevel, medicalConditio
   return Math.min(score, 100);
 }
 
-// Generates a descriptive French recommendation based on telemetry, location, and patient profile
+// Génère la recommandation d'urgence (en français) pour les secouristes
 export function generateRecommendation(alert) {
   const sensorData = alert.raw_payload || {};
   const notesLower = (alert.notes || '').toLowerCase();
@@ -86,7 +85,7 @@ export function generateRecommendation(alert) {
 
   const parts = [];
 
-  // 1. Analyze sensors to build the core diagnosis of the emergency
+  // 1. Diagnostic de base selon les capteurs
   if (crashDetected) {
     let crashMsg = "🚨 URGENCE CRASH : Décélération violente détectée.";
     if (impact === 'extreme') {
@@ -106,7 +105,7 @@ export function generateRecommendation(alert) {
     parts.push(`🆘 SOS MANUEL : Alerte déclenchée volontairement par le porteur depuis son ${sourceStr}.`);
   }
 
-  // 2. Append instructions according to the patient's medical dossier
+  // 2. Instructions spécifiques à son dossier médical
   if (medicalConditions && medicalConditions !== 'None' && medicalConditions !== 'Unknown') {
     const medLower = medicalConditions.toLowerCase();
     let medInstruction = "";
@@ -124,17 +123,17 @@ export function generateRecommendation(alert) {
     parts.push(medInstruction);
   }
 
-  // Allergen checks
+  // Attention aux allergies
   if (allergies && allergies !== 'None' && allergies !== 'Unknown') {
     parts.push(`🚫 ALERTE ALLERGIE : Antécédent d'allergie signalé (${allergies}). Alerter le médecin régulateur avant toute injection ou prescription.`);
   }
 
-  // Blood type info
+  // Groupe sanguin
   if (bloodType && bloodType !== 'Unknown' && bloodType !== 'None') {
     parts.push(`🩸 GROUPE SANGUIN : Patient enregistré sous le groupe ${bloodType}.`);
   }
 
-  // 3. Add location context guidelines (Vietnam metropolitan specific regions)
+  // 3. Guidage et spécificités selon la région (Vietnam)
   if (lat !== 0 && lng !== 0) {
     let locStr = "";
     if (lat >= 15.9 && lat <= 16.2 && lng >= 108.0 && lng <= 108.3) {
@@ -149,7 +148,7 @@ export function generateRecommendation(alert) {
     parts.push(locStr);
   }
 
-  // 4. Handle battery depletion warnings
+  // 4. Alerte batterie faible
   if (battery !== null && battery !== undefined && battery < 20) {
     parts.push(`🔋 BATTERIE CRITIQUE (${battery}%) : Risque imminent d'extinction de l'appareil. Le signal GPS et la transmission des capteurs pourraient cesser d'ici quelques minutes. Lancer immédiatement l'appel téléphonique de secours sur l'appareil.`);
   }
