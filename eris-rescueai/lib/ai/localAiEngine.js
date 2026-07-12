@@ -159,3 +159,214 @@ export function generateRecommendation(alert) {
 
   return parts.join(' ');
 }
+
+// Cache global pour éviter d'appeler l'API OpenRouter/Ollama en boucle sur les mêmes alertes
+if (!global.aiCache) {
+  global.aiCache = new Map();
+}
+
+// Modèle de neurone Perceptron local (Machine Learning L3)
+function sigmoid(x) {
+  return 1 / (1 + Math.exp(-x));
+}
+
+export function classifyPriorityML(sensorData, batteryLevel, medicalConditions, notes) {
+  const f_crash = (sensorData.crash_detected === true || sensorData.crash_detected === 'true' ? 1.0 : 0.0);
+  const f_fall = (sensorData.fall_detected === true || sensorData.fall_detected === 'true' ? 1.0 : 0.0);
+  const f_inactivity = (sensorData.inactivity === true || sensorData.inactivity === 'true' ? 1.0 : 0.0);
+  const f_battery_crit = (batteryLevel !== null && batteryLevel !== undefined && batteryLevel < 20 ? 1.0 : 0.0);
+  
+  let f_medical_risk = 0.0;
+  if (medicalConditions && medicalConditions !== 'None' && medicalConditions !== 'Unknown') {
+    const med = medicalConditions.toLowerCase();
+    if (med.includes('coeur') || med.includes('cardiaque') || med.includes('diab') || med.includes('asthme') || med.includes('avc')) {
+      f_medical_risk = 1.0;
+    } else {
+      f_medical_risk = 0.3;
+    }
+  }
+
+  let f_notes_critical = 0.0;
+  if (notes) {
+    const notesLower = notes.toLowerCase();
+    const criticalWords = ['extrême', 'extreme', 'grave', 'sang', 'inconscient', 'fracture', 'douleur', 'accident', 'crash'];
+    const count = criticalWords.filter(w => notesLower.includes(w)).length;
+    f_notes_critical = Math.min(count * 0.4, 1.0);
+  }
+
+  // Poids du modèle entraînés heuristiquement
+  const w_bias = -1.2; 
+  const w_crash = 3.2;
+  const w_fall = 2.0;
+  const w_inactivity = 1.5;
+  const w_battery = 1.0;
+  const w_medical = 1.4;
+  const w_notes = 1.6;
+
+  const z = (f_crash * w_crash) + 
+            (f_fall * w_fall) + 
+            (f_inactivity * w_inactivity) + 
+            (f_battery_crit * w_battery) + 
+            (f_medical_risk * w_medical) + 
+            (f_notes_critical * w_notes) + 
+            w_bias;
+
+  const priority = sigmoid(z);
+  return Math.min(Math.max(Math.round(priority * 100), 0), 100);
+}
+
+// Analyse l'alerte à l'aide d'un LLM si connecté/configuré, sinon utilise le modèle ML Perceptron local
+export async function getAlertPriorityAndRecommendation(alert) {
+  const cacheKey = alert.id || `${alert.device_id || alert.last_name || 'dev'}-${alert.created_at || alert.timestamp || Date.now()}`;
+  
+  if (global.aiCache.has(cacheKey)) {
+    return global.aiCache.get(cacheKey);
+  }
+
+  // 1. Calcul du repli local par défaut (ML Perceptron + Recommandations)
+  const localScore = classifyPriorityML(
+    alert.raw_payload || {},
+    alert.battery_level !== undefined ? alert.battery_level : alert.raw_payload?.battery,
+    alert.medical_conditions || alert.raw_payload?.medical_conditions,
+    alert.notes || alert.raw_payload?.notes
+  );
+  
+  const preparedAlert = {
+    ...alert,
+    raw_payload: alert.raw_payload || {
+      battery: alert.battery_level,
+      medical_conditions: alert.medical_conditions,
+    }
+  };
+  const localRec = "[IA ERIS-RescueAI] " + generateRecommendation(preparedAlert);
+
+  const hasConnection = (alert.transmission_method || alert.raw_payload?.transmission_method || 'INTERNET').toUpperCase() === 'INTERNET';
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+
+  const prompt = `
+Vous êtes l'intelligence artificielle de ERIS RescueAI Hub. Votre rôle est d'évaluer la priorité d'une alerte d'urgence SOS (de 0 à 100) et de générer une recommandation courte et précise en français pour les secouristes.
+
+Données de l'alerte :
+- Device ID / Nom : ${alert.device_id || alert.last_name || 'Inconnu'}
+- Transmission : ${alert.transmission_method || alert.raw_payload?.transmission_method || 'INTERNET'}
+- Niveau de batterie : ${alert.battery_level !== undefined ? alert.battery_level : alert.raw_payload?.battery || 100}%
+- Impact détecté : ${alert.raw_payload?.impact || 'aucun'}
+- Chute détectée : ${alert.raw_payload?.fall_detected ? 'Oui' : 'Non'}
+- Accident routier (Crash) : ${alert.raw_payload?.crash_detected ? 'Oui' : 'Non'}
+- Inactivité : ${alert.raw_payload?.inactivity ? 'Oui' : 'Non'}
+- Antécédents médicaux : ${alert.medical_conditions || alert.raw_payload?.medical_conditions || 'aucun'}
+- Allergies : ${alert.allergies || alert.raw_payload?.allergies || 'aucune'}
+- Groupe sanguin : ${alert.blood_type || alert.raw_payload?.blood_type || 'inconnu'}
+- Notes : ${alert.notes || alert.raw_payload?.notes || ''}
+
+Règles d'évaluation (pour guider votre score) :
+- Crash routier ou chute grave suivie d'inactivité : score >= 70 (Critique).
+- Batterie critique (<20%) augmente le score.
+- Pathologies graves (cardiaque, asthme, diabète) augmentent le score.
+- SOS manuel simple sans indicateur critique : 15 à 30.
+
+Répondez STRICTEMENT au format JSON suivant (pas de texte additionnel, pas de markdown, pas de blocs \`\`\`json) :
+{
+  "priority_score": <nombre entier de 0 à 100>,
+  "ai_recommendation": "<votre recommandation concise en français avec emojis>"
+}
+`;
+
+  const geminiKey = process.env.GEMINI_API_KEY || (openRouterKey && (openRouterKey.startsWith("AIzaSy") || openRouterKey.startsWith("AQ.")) ? openRouterKey : null);
+
+  // Option A : LLM officiel Google Gemini (via Google AI Studio, 100% gratuit et non partagé)
+  if (hasConnection && geminiKey) {
+    const geminiModels = [
+      "gemini-3.5-flash",
+      "gemini-2.0-flash"
+    ];
+
+    for (const model of geminiModels) {
+      try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: { responseMimeType: "application/json" }
+          })
+        });
+
+        if (response.ok) {
+          const json = await response.json();
+          const content = json.candidates[0].content.parts[0].text.trim();
+          const cleanContent = content.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+          const data = JSON.parse(cleanContent);
+
+          const result = {
+            priority_score: Math.min(Math.max(parseInt(data.priority_score) || localScore, 0), 100),
+            ai_recommendation: data.ai_recommendation || localRec
+          };
+          global.aiCache.set(cacheKey, result);
+          return result;
+        } else {
+          console.warn(`Gemini API model ${model} error response status: ${response.status}`);
+        }
+      } catch (err) {
+        console.warn(`Échec de l'API Google Gemini avec le modèle ${model}, tentative de bascule...`, err);
+      }
+    }
+  }
+
+  // Option B : LLM via OpenRouter (avec clé API et basculement automatique de modèle gratuit)
+  if (hasConnection && openRouterKey && !openRouterKey.startsWith("AIzaSy") && !openRouterKey.startsWith("AQ.")) {
+    const freeModels = [
+      "meta-llama/llama-3.2-3b-instruct:free",
+      "nousresearch/hermes-3-llama-3.1-405b:free",
+      "google/gemma-2-9b-it:free"
+    ];
+
+    for (const model of freeModels) {
+      try {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${openRouterKey}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": "http://localhost:3000",
+            "X-Title": "ERIS RescueAI Hub"
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [{ role: "user", content: prompt }],
+            response_format: { type: "json_object" }
+          })
+        });
+
+        if (response.ok) {
+          const json = await response.json();
+          const content = json.choices[0].message.content.trim();
+          const cleanContent = content.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+          const data = JSON.parse(cleanContent);
+
+          const result = {
+            priority_score: Math.min(Math.max(parseInt(data.priority_score) || localScore, 0), 100),
+            ai_recommendation: data.ai_recommendation || localRec
+          };
+          global.aiCache.set(cacheKey, result);
+          return result;
+        } else {
+          console.warn(`OpenRouter model ${model} failed with status: ${response.status} ${response.statusText}`);
+        }
+      } catch (err) {
+        console.warn(`Error calling OpenRouter model ${model}:`, err);
+      }
+    }
+    console.warn("All OpenRouter models failed or were rate-limited. Falling back to local ML model.");
+  }
+
+  // Option C : Modèle Machine Learning Perceptron local (100% gratuit, sans clé API, s'exécute pour tout le monde)
+  const result = {
+    priority_score: localScore,
+    ai_recommendation: localRec
+  };
+  global.aiCache.set(cacheKey, result);
+  return result;
+}
+
+

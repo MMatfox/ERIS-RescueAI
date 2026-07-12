@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { calculatePriorityScore, generateRecommendation } from '@/lib/ai/localAiEngine';
+import { calculatePriorityScore, generateRecommendation, getAlertPriorityAndRecommendation } from '@/lib/ai/localAiEngine';
 import { authenticateApiKey } from '@/lib/auth/middleware';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -72,8 +72,8 @@ export async function POST(request) {
       raw_payload: sensorData
     };
 
-    const priorityScore = calculatePriorityScore(sensorData, battery, 'None');
-    const aiRecommendation = generateRecommendation(preparedAlert);
+    const { priority_score: priorityScore, ai_recommendation: aiRecommendation } = 
+      await getAlertPriorityAndRecommendation(preparedAlert);
 
     const { data, error } = await supabase
       .from('sos_alerts')

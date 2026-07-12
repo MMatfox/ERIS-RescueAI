@@ -314,7 +314,7 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
       <div ref={mapContainerRef} className="w-full h-full absolute inset-0 z-10" />
 
       {/* Panneau de filtres et Recentrer */}
-      <div className="absolute top-3 left-3 z-20 flex flex-col gap-2">
+      <div className="absolute top-3 right-3 z-[1001] flex flex-col items-end gap-2">
         <div className="flex gap-2">
           <button
             onClick={() => setShowFiltersPanel(!showFiltersPanel)}
@@ -326,11 +326,13 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
             Filtres de Carte
-            {events.length > filteredEvents.length && (
-              <span className="bg-rose-500 text-white rounded-full px-1.5 py-0.2 text-[9px] font-black">
-                {filteredEvents.length} / {events.length}
-              </span>
-            )}
+            <span className={`rounded px-1.5 py-0.2 text-[9px] font-black border transition ${
+              events.length > filteredEvents.length 
+                ? 'bg-rose-500/20 border-rose-500/30 text-rose-300' 
+                : 'bg-zinc-800/80 border-zinc-700/80 text-zinc-400'
+            }`}>
+              {events.length > filteredEvents.length ? `${filteredEvents.length}/${events.length}` : events.length}
+            </span>
           </button>
           
           <button
@@ -344,9 +346,9 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
 
         {/* Panneau de contrôle des filtres */}
         {showFiltersPanel && (
-          <div className="w-[280px] bg-zinc-900/95 backdrop-blur-md border border-zinc-800 rounded-xl p-4 shadow-2xl flex flex-col gap-3.5 animate-fadeIn text-zinc-200">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">Options d&apos;Affichage</span>
+          <div className="w-[245px] max-h-[calc(100%-16px)] overflow-y-auto bg-zinc-900/95 backdrop-blur-md border border-zinc-800 rounded-xl p-2.5 shadow-2xl flex flex-col gap-2 animate-fadeIn text-zinc-200 scrollbar-thin scrollbar-thumb-zinc-800">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Options d&apos;Affichage</span>
               <button
                 onClick={() => {
                   setFilterTypes({ fall: true, crash: true, inactivity: true, manual: true });
@@ -354,19 +356,19 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
                   setFilterStatuses({ pending: true, in_progress: true, resolved: true });
                   setShowDuplicates(true);
                 }}
-                className="text-[10px] text-zinc-500 hover:text-rose-400 font-semibold transition"
+                className="text-[9px] text-zinc-500 hover:text-rose-400 font-semibold transition"
               >
                 Réinitialiser
               </button>
             </div>
 
             {/* Catégories d'incidents */}
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">Type d&apos;Incident</span>
-              <div className="grid grid-cols-2 gap-1.5">
+            <div className="space-y-1">
+              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">Type d&apos;Incident</span>
+              <div className="grid grid-cols-2 gap-1">
                 <button
                   onClick={() => setFilterTypes(prev => ({ ...prev, fall: !prev.fall }))}
-                  className={`px-2 py-1 rounded text-[10px] text-left border flex items-center justify-between transition ${
+                  className={`px-1.5 py-0.5 rounded text-[9px] text-left border flex items-center justify-between transition ${
                     filterTypes.fall ? 'bg-zinc-800/80 border-zinc-700 text-white font-medium' : 'bg-zinc-950/40 border-zinc-900 text-zinc-500'
                   }`}
                 >
@@ -375,7 +377,7 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
                 </button>
                 <button
                   onClick={() => setFilterTypes(prev => ({ ...prev, crash: !prev.crash }))}
-                  className={`px-2 py-1 rounded text-[10px] text-left border flex items-center justify-between transition ${
+                  className={`px-1.5 py-0.5 rounded text-[9px] text-left border flex items-center justify-between transition ${
                     filterTypes.crash ? 'bg-zinc-800/80 border-zinc-700 text-white font-medium' : 'bg-zinc-950/40 border-zinc-900 text-zinc-500'
                   }`}
                 >
@@ -384,83 +386,83 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
                 </button>
                 <button
                   onClick={() => setFilterTypes(prev => ({ ...prev, inactivity: !prev.inactivity }))}
-                  className={`px-2 py-1 rounded text-[10px] text-left border flex items-center justify-between transition ${
+                  className={`px-1.5 py-0.5 rounded text-[9px] text-left border flex items-center justify-between transition ${
                     filterTypes.inactivity ? 'bg-zinc-800/80 border-zinc-700 text-white font-medium' : 'bg-zinc-950/40 border-zinc-900 text-zinc-500'
                   }`}
                 >
-                  <span>🕒 Inactivité</span>
+                  <span>🕒 Inac.</span>
                   <span className="font-mono opacity-70">({stats.inactivity})</span>
                 </button>
                 <button
                   onClick={() => setFilterTypes(prev => ({ ...prev, manual: !prev.manual }))}
-                  className={`px-2 py-1 rounded text-[10px] text-left border flex items-center justify-between transition ${
+                  className={`px-1.5 py-0.5 rounded text-[9px] text-left border flex items-center justify-between transition ${
                     filterTypes.manual ? 'bg-zinc-800/80 border-zinc-700 text-white font-medium' : 'bg-zinc-950/40 border-zinc-900 text-zinc-500'
                   }`}
                 >
-                  <span>🚨 Manuel</span>
+                  <span>🚨 Man.</span>
                   <span className="font-mono opacity-70">({stats.manual})</span>
                 </button>
               </div>
             </div>
 
             {/* Niveau de Priorité */}
-            <div className="space-y-1.5 border-t border-zinc-850 pt-2.5">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">Niveau de Priorité</span>
-              <div className="flex gap-1.5">
+            <div className="space-y-1 border-t border-zinc-850 pt-2">
+              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">Niveau de Priorité</span>
+              <div className="flex gap-1">
                 <button
                   onClick={() => setFilterPriorities(prev => ({ ...prev, critical: !prev.critical }))}
-                  className={`flex-1 px-2 py-1.5 rounded text-[10px] border flex flex-col items-center gap-0.5 transition ${
+                  className={`flex-1 px-1 py-1 rounded text-[9px] border flex flex-col items-center gap-0.5 transition ${
                     filterPriorities.critical ? 'bg-rose-950/30 border-rose-900/60 text-rose-300 font-bold' : 'bg-zinc-950/40 border-zinc-900 text-zinc-500'
                   }`}
                 >
-                  <span>Critique (≥70)</span>
-                  <span className="font-mono text-[9px] opacity-75">({stats.critical})</span>
+                  <span>Critique</span>
+                  <span className="font-mono text-[8px] opacity-75">({stats.critical})</span>
                 </button>
                 <button
                   onClick={() => setFilterPriorities(prev => ({ ...prev, medium: !prev.medium }))}
-                  className={`flex-1 px-2 py-1.5 rounded text-[10px] border flex flex-col items-center gap-0.5 transition ${
+                  className={`flex-1 px-1 py-1 rounded text-[9px] border flex flex-col items-center gap-0.5 transition ${
                     filterPriorities.medium ? 'bg-amber-950/30 border-amber-900/60 text-amber-300 font-bold' : 'bg-zinc-950/40 border-zinc-900 text-zinc-500'
                   }`}
                 >
-                  <span>Moyen (40-69)</span>
-                  <span className="font-mono text-[9px] opacity-75">({stats.medium})</span>
+                  <span>Moyen</span>
+                  <span className="font-mono text-[8px] opacity-75">({stats.medium})</span>
                 </button>
                 <button
                   onClick={() => setFilterPriorities(prev => ({ ...prev, low: !prev.low }))}
-                  className={`flex-1 px-2 py-1.5 rounded text-[10px] border flex flex-col items-center gap-0.5 transition ${
+                  className={`flex-1 px-1 py-1 rounded text-[9px] border flex flex-col items-center gap-0.5 transition ${
                     filterPriorities.low ? 'bg-emerald-950/20 border-emerald-900/40 text-emerald-400 font-bold' : 'bg-zinc-950/40 border-zinc-900 text-zinc-500'
                   }`}
                 >
-                  <span>Faible (&lt;40)</span>
-                  <span className="font-mono text-[9px] opacity-75">({stats.low})</span>
+                  <span>Faible</span>
+                  <span className="font-mono text-[8px] opacity-75">({stats.low})</span>
                 </button>
               </div>
             </div>
 
             {/* Statuts & Doublons */}
-            <div className="space-y-2 border-t border-zinc-850 pt-2.5">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">Statut & Doublons</span>
-              <div className="flex flex-col gap-1.5">
-                <div className="flex gap-1.5">
+            <div className="space-y-1.5 border-t border-zinc-850 pt-2">
+              <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">Statut & Doublons</span>
+              <div className="flex flex-col gap-1">
+                <div className="flex gap-1">
                   <button
                     onClick={() => setFilterStatuses(prev => ({ ...prev, pending: !prev.pending }))}
-                    className={`flex-1 px-2 py-1 rounded text-[10px] border transition ${
+                    className={`flex-1 px-1 py-0.5 rounded text-[9px] border transition ${
                       filterStatuses.pending ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 font-semibold' : 'bg-zinc-950/40 border-zinc-900 text-zinc-500'
                     }`}
                   >
-                    En attente ({stats.pending})
+                    Attente ({stats.pending})
                   </button>
                   <button
                     onClick={() => setFilterStatuses(prev => ({ ...prev, in_progress: !prev.in_progress }))}
-                    className={`flex-1 px-2 py-1 rounded text-[10px] border transition ${
+                    className={`flex-1 px-1 py-0.5 rounded text-[9px] border transition ${
                       filterStatuses.in_progress ? 'bg-sky-500/10 border-sky-500/30 text-sky-400 font-semibold' : 'bg-zinc-950/40 border-zinc-900 text-zinc-500'
                     }`}
                   >
-                    En cours ({stats.in_progress})
+                    Cours ({stats.in_progress})
                   </button>
                   <button
                     onClick={() => setFilterStatuses(prev => ({ ...prev, resolved: !prev.resolved }))}
-                    className={`flex-1 px-2 py-1 rounded text-[10px] border transition ${
+                    className={`flex-1 px-1 py-0.5 rounded text-[9px] border transition ${
                       filterStatuses.resolved ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-semibold' : 'bg-zinc-950/40 border-zinc-900 text-zinc-500'
                     }`}
                   >
@@ -468,15 +470,27 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
                   </button>
                 </div>
 
-                <label className="flex items-center justify-between p-2 rounded-lg bg-zinc-950/50 border border-zinc-855 text-xs cursor-pointer select-none">
-                  <span className="text-[11px] text-zinc-400 font-medium">Afficher les Doublons ({stats.duplicates})</span>
-                  <input
-                    type="checkbox"
-                    checked={showDuplicates}
-                    onChange={(e) => setShowDuplicates(e.target.checked)}
-                    className="accent-rose-500 h-3.5 w-3.5 rounded cursor-pointer"
-                  />
-                </label>
+                <div className="flex gap-1 pt-0.5">
+                  <button
+                    onClick={() => setShowDuplicates(true)}
+                    className={`flex-1 py-0.5 rounded text-[9px] border transition font-semibold ${
+                      showDuplicates ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-zinc-950/40 border-zinc-900 text-zinc-500 hover:text-zinc-400'
+                    }`}
+                  >
+                    Avec Doublons ({stats.duplicates})
+                  </button>
+                  <button
+                    onClick={() => setShowDuplicates(false)}
+                    className={`flex-1 py-0.5 rounded text-[9px] border transition font-semibold ${
+                      !showDuplicates ? 'bg-rose-950/20 border-rose-900/50 text-rose-400' : 'bg-zinc-950/40 border-zinc-900 text-zinc-500 hover:text-zinc-400'
+                    }`}
+                  >
+                    Sans Doublons
+                  </button>
+                </div>
+                <div className="text-[8px] text-zinc-500 text-center font-medium pt-1.5 border-t border-zinc-850/30 select-none">
+                  ℹ️ Statuts (Délivrées, Annulées) harmonisés auto.
+                </div>
               </div>
             </div>
           </div>
@@ -484,7 +498,7 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
       </div>
 
       {/* Petit récapitulatif en bas à gauche de la carte */}
-      <div className="absolute bottom-3 left-3 z-20 bg-zinc-900/80 backdrop-blur-md border border-zinc-855 rounded-lg py-1.5 px-2.5 text-[10px] text-zinc-400 flex gap-3 shadow-md pointer-events-none select-none font-mono">
+      <div className="absolute bottom-3 left-3 z-[999] bg-zinc-900/80 backdrop-blur-md border border-zinc-855 rounded-lg py-1.5 px-2.5 text-[10px] text-zinc-400 flex gap-3 shadow-md pointer-events-none select-none font-mono">
         <div className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-rose-500"></span>
           <span>En attente ({filteredEvents.filter(e => !e.is_duplicate && (e.status || 'pending') === 'pending').length})</span>

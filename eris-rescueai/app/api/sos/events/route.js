@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { calculatePriorityScore, generateRecommendation } from '@/lib/ai/localAiEngine';
+import { calculatePriorityScore, generateRecommendation, getAlertPriorityAndRecommendation } from '@/lib/ai/localAiEngine';
 import { authenticateApiKey } from '@/lib/auth/middleware';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -24,8 +24,8 @@ export async function GET(request) {
       throw error;
     }
 
-    // Formatage des données pour le dashboard
-    const mappedData = data.map((alert, index) => {
+    // Formatage des données pour le dashboard (évaluation asynchrone par LLM/Règles)
+    const mappedDataPromises = data.map(async (alert, index) => {
       const notesLower = (alert.notes || '').toLowerCase();
       
       // Extraction du type d'incident à partir des notes
@@ -65,13 +65,8 @@ export async function GET(request) {
         }
       };
 
-      const priorityScore = calculatePriorityScore(
-        preparedAlert.raw_payload,
-        alert.battery_level,
-        alert.medical_conditions
-      );
-
-      const aiRecommendation = generateRecommendation(preparedAlert);
+      const { priority_score: priorityScore, ai_recommendation: aiRecommendation } = 
+        await getAlertPriorityAndRecommendation(preparedAlert);
 
       return {
         id: alert.id,
@@ -94,10 +89,12 @@ export async function GET(request) {
         },
         is_duplicate: isDuplicate,
         priority_score: priorityScore,
-        status: alert.status,
+        status: alert.status === 'delivered' ? 'pending' : (alert.status === 'revoked' ? 'resolved' : alert.status),
         ai_recommendation: aiRecommendation
       };
     });
+
+    const mappedData = await Promise.all(mappedDataPromises);
 
     return NextResponse.json({ success: true, data: mappedData }, { status: 200 });
   } catch (error) {
