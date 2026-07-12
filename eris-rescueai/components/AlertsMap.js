@@ -43,6 +43,29 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
 
   const [showDuplicates, setShowDuplicates] = useState(true);
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+
+  // Suivre la localisation de l'opérateur
+  useEffect(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      (error) => {
+        console.error("Erreur de géolocalisation:", error);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, []);
 
   // Init de la carte Leaflet
   useEffect(() => {
@@ -113,6 +136,43 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
 
     markersLayerRef.current.clearLayers();
     markersMapRef.current.clear();
+
+    // 1. Dessiner le marqueur de la position utilisateur si disponible
+    if (userLocation) {
+      const userMarkerHtml = `
+        <div class="relative flex items-center justify-center w-6 h-6">
+          <span class="ping absolute inline-flex h-full w-full rounded-full bg-violet-500 opacity-60"></span>
+          <div class="relative h-3.5 w-3.5 rounded-full bg-violet-500 border-2 border-zinc-950 shadow-lg flex items-center justify-center">
+            <div class="h-1.5 w-1.5 bg-white rounded-full"></div>
+          </div>
+        </div>
+      `;
+
+      const userIcon = L.divIcon({
+        className: 'user-location-marker',
+        html: userMarkerHtml,
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
+        popupAnchor: [0, -10],
+      });
+
+      const userMarker = L.marker([userLocation.lat, userLocation.lng], { icon: userIcon });
+      
+      const userPopup = document.createElement('div');
+      userPopup.className = 'p-1.5 space-y-1 text-xs';
+      userPopup.innerHTML = `
+        <div class="flex items-center gap-2 border-b border-zinc-800 pb-1 mb-1">
+          <strong class="text-zinc-100">Ma Position</strong>
+        </div>
+        <div class="text-zinc-400 font-medium">Console Opérateur ERIS</div>
+        <div class="text-[10px] text-zinc-500 font-mono mt-1">${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)}</div>
+      `;
+      userMarker.bindPopup(userPopup);
+      userMarker.on('click', () => {
+        mapRef.current.panTo([userLocation.lat, userLocation.lng]);
+      });
+      userMarker.addTo(markersLayerRef.current);
+    }
 
     if (filteredEvents.length === 0) return;
 
@@ -198,12 +258,17 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
     });
 
     // Ajuster le zoom pour englober tous les marqueurs au chargement initial uniquement
-    if (filteredEvents.length > 0 && !hasFitRef.current) {
-      const bounds = L.latLngBounds(filteredEvents.map(e => [parseFloat(e.latitude), parseFloat(e.longitude)]));
-      mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
-      hasFitRef.current = true;
+    if (!hasFitRef.current) {
+      if (filteredEvents.length > 0) {
+        const bounds = L.latLngBounds(filteredEvents.map(e => [parseFloat(e.latitude), parseFloat(e.longitude)]));
+        mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
+        hasFitRef.current = true;
+      } else if (userLocation) {
+        mapRef.current.setView([userLocation.lat, userLocation.lng], 13);
+        hasFitRef.current = true;
+      }
     }
-  }, [filteredEvents, setSelectedEvent]);
+  }, [filteredEvents, setSelectedEvent, userLocation]);
 
   // Recentrer la carte quand l'utilisateur sélectionne une alerte dans la liste
   useEffect(() => {
@@ -253,7 +318,10 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
   }, [events]);
 
   const handleRecenter = () => {
-    if (mapRef.current && filteredEvents.length > 0) {
+    if (!mapRef.current) return;
+    if (userLocation) {
+      mapRef.current.setView([userLocation.lat, userLocation.lng], 13, { animate: true });
+    } else if (filteredEvents.length > 0) {
       const bounds = L.latLngBounds(filteredEvents.map(e => [parseFloat(e.latitude), parseFloat(e.longitude)]));
       mapRef.current.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
     }
@@ -262,7 +330,7 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
   return (
     <div className="relative w-full h-full min-h-[350px] bg-zinc-950 rounded-xl overflow-hidden border border-zinc-800 shadow-inner group">
       <style>{`
-        .custom-marker-pin .ping {
+        .custom-marker-pin .ping, .user-location-marker .ping {
           animation: pin-ping-pulse 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
         }
         @keyframes pin-ping-pulse {
