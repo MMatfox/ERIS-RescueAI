@@ -628,7 +628,7 @@ export default function Home() {
                           
                           { }
                           {event.is_duplicate && (
-                            <span className="text-[10px] bg-zinc-850 text-zinc-500 px-2 py-0.5 rounded border border-zinc-800 uppercase font-bold tracking-wider">
+                            <span className="text-[10px] bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded border border-zinc-800 uppercase font-bold tracking-wider">
                               Doublon
                             </span>
                           )}
@@ -685,13 +685,13 @@ export default function Home() {
 
       { }
       {selectedEvent && isModalOpen && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fadeIn">
           <div 
             className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
             { }
-            <div className="border-b border-zinc-800 p-5 flex items-start justify-between bg-zinc-925 sticky top-0 z-10">
+            <div className="border-b border-zinc-800 p-5 flex items-start justify-between bg-zinc-900 sticky top-0 z-10">
               <div>
                 <div className="flex items-center gap-2.5">
                   <h3 className="text-lg font-bold text-white font-mono">{selectedEvent.device_id}</h3>
@@ -749,19 +749,19 @@ export default function Home() {
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => updateEventAttribute(selectedEvent.id, { status: 'pending' })}
-                        className={`py-1.5 px-2.5 rounded text-xs transition font-semibold border ${selectedEvent.status === 'pending' ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'bg-zinc-900 border-zinc-850 hover:border-zinc-750 text-zinc-400 hover:text-zinc-200'}`}
+                        className={`py-1.5 px-2.5 rounded text-xs transition font-semibold border ${selectedEvent.status === 'pending' ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-750 text-zinc-400 hover:text-zinc-200'}`}
                       >
                         En attente
                       </button>
                       <button
                         onClick={() => updateEventAttribute(selectedEvent.id, { status: 'in_progress' })}
-                        className={`py-1.5 px-2.5 rounded text-xs transition font-semibold border ${selectedEvent.status === 'in_progress' ? 'bg-sky-500/20 border-sky-500 text-sky-400' : 'bg-zinc-900 border-zinc-850 hover:border-zinc-750 text-zinc-400 hover:text-zinc-200'}`}
+                        className={`py-1.5 px-2.5 rounded text-xs transition font-semibold border ${selectedEvent.status === 'in_progress' ? 'bg-sky-500/20 border-sky-500 text-sky-400' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-750 text-zinc-400 hover:text-zinc-200'}`}
                       >
                         En cours
                       </button>
                       <button
                         onClick={() => updateEventAttribute(selectedEvent.id, { status: 'resolved' })}
-                        className={`py-1.5 px-2.5 rounded text-xs transition font-semibold border ${selectedEvent.status === 'resolved' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-zinc-900 border-zinc-850 hover:border-zinc-750 text-zinc-400 hover:text-zinc-200'}`}
+                        className={`py-1.5 px-2.5 rounded text-xs transition font-semibold border ${selectedEvent.status === 'resolved' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-750 text-zinc-400 hover:text-zinc-200'}`}
                       >
                         Résolu
                       </button>
@@ -773,7 +773,7 @@ export default function Home() {
                     <span className="text-[11px] text-zinc-500 block">Gestion des doublons :</span>
                     <button
                       onClick={() => updateEventAttribute(selectedEvent.id, { is_duplicate: !selectedEvent.is_duplicate })}
-                      className={`w-full py-1.5 px-2.5 rounded text-xs transition font-semibold border flex items-center justify-center gap-1.5 ${selectedEvent.is_duplicate ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-zinc-900 border-zinc-850 hover:border-zinc-750 text-zinc-500 hover:text-zinc-300'}`}
+                      className={`w-full py-1.5 px-2.5 rounded text-xs transition font-semibold border flex items-center justify-center gap-1.5 ${selectedEvent.is_duplicate ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-750 text-zinc-500 hover:text-zinc-300'}`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 14h6"/><path d="M12 11v6"/></svg>
                       {selectedEvent.is_duplicate ? 'Considérer Réelet' : 'Signaler Doublon'}
@@ -848,19 +848,19 @@ export default function Home() {
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2.5">
                 <span className="text-xs font-semibold text-zinc-300 block">Dossier Médical de l&apos;Abonné</span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
-                  <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-850/80">
+                  <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/80">
                     <span className="text-zinc-500 block mb-1 font-medium">Groupe Sanguin</span>
                     <span className="font-mono text-rose-400 font-bold text-sm bg-rose-950/20 px-2 py-0.5 rounded border border-rose-900/40 inline-block">
                       {selectedEvent.raw_payload?.blood_type || 'O+'}
                     </span>
                   </div>
-                  <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-850/80">
+                  <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/80">
                     <span className="text-zinc-500 block mb-1 font-medium">Allergies Signalées</span>
                     <span className="text-zinc-300 font-semibold">
                       {selectedEvent.raw_payload?.allergies && selectedEvent.raw_payload.allergies !== 'None' ? selectedEvent.raw_payload.allergies : 'Aucune allergie connue'}
                     </span>
                   </div>
-                  <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-850/80">
+                  <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/80">
                     <span className="text-zinc-500 block mb-1 font-medium">Antécédents / Maladies</span>
                     <span className="text-zinc-300 font-semibold">
                       {selectedEvent.raw_payload?.medical_conditions && selectedEvent.raw_payload.medical_conditions !== 'None' ? selectedEvent.raw_payload.medical_conditions : 'Aucun antécédent majeur'}
@@ -872,7 +872,7 @@ export default function Home() {
               { }
               <div className="space-y-1.5">
                 <span className="text-xs font-semibold text-zinc-300 block">Payload JSON Ingesté</span>
-                <pre className="bg-zinc-950 border border-zinc-850 rounded-xl p-4 text-xs font-mono text-zinc-400 overflow-x-auto max-h-[160px]">
+                <pre className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-xs font-mono text-zinc-400 overflow-x-auto max-h-[160px]">
                   {JSON.stringify(selectedEvent.raw_payload, null, 2)}
                 </pre>
               </div>
@@ -880,7 +880,7 @@ export default function Home() {
             </div>
 
             { }
-            <div className="border-t border-zinc-800 p-4 bg-zinc-925 flex justify-end">
+            <div className="border-t border-zinc-800 p-4 bg-zinc-900 flex justify-end">
               <button
                 onClick={() => { setSelectedEvent(null); setIsModalOpen(false); }}
                 className="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-4 py-2 rounded-lg text-sm font-semibold transition border border-zinc-750"

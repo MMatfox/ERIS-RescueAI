@@ -321,7 +321,7 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold border transition shadow-lg backdrop-blur-md ${
               showFiltersPanel
                 ? 'bg-rose-950/80 border-rose-800 text-rose-300'
-                : 'bg-zinc-900/90 border-zinc-850 hover:border-zinc-700 text-zinc-300'
+                : 'bg-zinc-900/90 border-zinc-800 hover:border-zinc-700 text-zinc-300'
             }`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
@@ -337,7 +337,7 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
           
           <button
             onClick={handleRecenter}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border bg-zinc-900/90 border-zinc-850 hover:border-zinc-700 text-zinc-300 transition shadow-lg backdrop-blur-md cursor-pointer animate-fadeIn"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border bg-zinc-900/90 border-zinc-800 hover:border-zinc-700 text-zinc-300 transition shadow-lg backdrop-blur-md cursor-pointer animate-fadeIn"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
             Recentrer
@@ -406,7 +406,7 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
             </div>
 
             {/* Niveau de Priorité */}
-            <div className="space-y-1 border-t border-zinc-850 pt-2">
+            <div className="space-y-1 border-t border-zinc-800 pt-2">
               <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">Niveau de Priorité</span>
               <div className="flex gap-1">
                 <button
@@ -440,7 +440,7 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
             </div>
 
             {/* Statuts & Doublons */}
-            <div className="space-y-1.5 border-t border-zinc-850 pt-2">
+            <div className="space-y-1.5 border-t border-zinc-800 pt-2">
               <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">Statut & Doublons</span>
               <div className="flex flex-col gap-1">
                 <div className="flex gap-1">
@@ -488,7 +488,7 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
                     Sans Doublons
                   </button>
                 </div>
-                <div className="text-[8px] text-zinc-500 text-center font-medium pt-1.5 border-t border-zinc-850/30 select-none">
+                <div className="text-[8px] text-zinc-500 text-center font-medium pt-1.5 border-t border-zinc-800/30 select-none">
                   ℹ️ Statuts (Délivrées, Annulées) harmonisés auto.
                 </div>
               </div>
@@ -498,7 +498,7 @@ export default function AlertsMap({ events, selectedEvent, setSelectedEvent, onS
       </div>
 
       {/* Petit récapitulatif en bas à gauche de la carte */}
-      <div className="absolute bottom-3 left-3 z-[999] bg-zinc-900/80 backdrop-blur-md border border-zinc-855 rounded-lg py-1.5 px-2.5 text-[10px] text-zinc-400 flex gap-3 shadow-md pointer-events-none select-none font-mono">
+      <div className="absolute bottom-3 left-3 z-[999] bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-lg py-1.5 px-2.5 text-[10px] text-zinc-400 flex gap-3 shadow-md pointer-events-none select-none font-mono">
         <div className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-rose-500"></span>
           <span>En attente ({filteredEvents.filter(e => !e.is_duplicate && (e.status || 'pending') === 'pending').length})</span>
