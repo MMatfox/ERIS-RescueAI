@@ -1,6 +1,6 @@
  // Calcul de la priorité (0-100) selon les capteurs et l'historique médical
 export function calculatePriorityScore(sensorData, batteryLevel, medicalConditions) {
-  let score = 15; // Base score for any triggered SOS signal 
+  let score = 15;
 
   const impact = sensorData.impact || 'none';
   const crashDetected = sensorData.crash_detected === true || sensorData.crash_detected === 'true';

@@ -1,6 +1,23 @@
 'use client';
  
 import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
+
+const AlertsMap = dynamic(() => import('../components/AlertsMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="h-[380px] w-full bg-zinc-900 flex items-center justify-center border border-zinc-800 rounded-xl">
+      <div className="text-zinc-400 text-sm animate-pulse flex items-center gap-2">
+        <svg className="animate-spin h-5 w-5 text-rose-500" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+        Chargement de la carte...
+      </div>
+    </div>
+  )
+});
+
 
 export default function Home() {
   const apiKey = process.env.NEXT_PUBLIC_API_KEY || '';
@@ -9,6 +26,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const [statusFilter, setStatusFilter] = useState('all');
   const [showDuplicates, setShowDuplicates] = useState('all'); 
@@ -468,6 +486,19 @@ export default function Home() {
           { }
           <section className="lg:col-span-2 space-y-4">
             
+            {/* Carte interactive */}
+            <div className="h-[380px] w-full">
+              <AlertsMap 
+                events={events} 
+                selectedEvent={selectedEvent} 
+                setSelectedEvent={setSelectedEvent} 
+                onShowDetails={(event) => {
+                  setSelectedEvent(event);
+                  setIsModalOpen(true);
+                }}
+              />
+            </div>
+
             { }
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
               <div className="flex flex-col md:flex-row md:items-center gap-3 justify-between">
@@ -626,9 +657,17 @@ export default function Home() {
                           <span className="text-lg font-black font-mono leading-tight">{event.priority_score}</span>
                         </div>
 
-                        <span className="text-zinc-500 group-hover:text-zinc-300 transition pl-1 hidden md:block">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedEvent(event);
+                            setIsModalOpen(true);
+                          }}
+                          className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-rose-600 hover:text-white border border-zinc-750 text-zinc-400 transition cursor-pointer flex items-center justify-center hover:shadow-md ml-1"
+                          title="Voir les détails de l'alerte"
+                        >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
-                        </span>
+                        </button>
                       </div>
                     </div>
                   );
@@ -645,7 +684,7 @@ export default function Home() {
       </footer>
 
       { }
-      {selectedEvent && (
+      {selectedEvent && isModalOpen && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fadeIn">
           <div 
             className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative"
@@ -674,7 +713,7 @@ export default function Home() {
                 </p>
               </div>
               <button
-                onClick={() => setSelectedEvent(null)}
+                onClick={() => { setSelectedEvent(null); setIsModalOpen(false); }}
                 className="text-zinc-400 hover:text-white bg-zinc-800 hover:bg-zinc-700 p-1.5 rounded-lg transition"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -843,7 +882,7 @@ export default function Home() {
             { }
             <div className="border-t border-zinc-800 p-4 bg-zinc-925 flex justify-end">
               <button
-                onClick={() => setSelectedEvent(null)}
+                onClick={() => { setSelectedEvent(null); setIsModalOpen(false); }}
                 className="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-4 py-2 rounded-lg text-sm font-semibold transition border border-zinc-750"
               >
                 Fermer
