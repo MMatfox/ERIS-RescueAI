@@ -55,7 +55,7 @@ async function createKey(name, rateLimit = 1000) {
   console.log(`\n🔑 Creating API key for: ${name}\n`);
   
   const apiKey = generateApiKey();
-  const keyHash = await hashApiKey(apiKey);
+  const keyHash = hashApiKey(apiKey);
 
   const { data, error } = await supabase
     .from('api_keys')

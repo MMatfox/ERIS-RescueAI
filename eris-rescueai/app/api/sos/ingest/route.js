@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { calculatePriorityScore, generateRecommendation, getAlertPriorityAndRecommendation } from '@/lib/ai/localAiEngine';
+import { getAlertPriorityAndRecommendation } from '@/lib/ai/localAiEngine';
 import { authenticateApiKey } from '@/lib/auth/middleware';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -75,11 +75,13 @@ export async function POST(request) {
     const { priority_score: priorityScore, ai_recommendation: aiRecommendation } = 
       await getAlertPriorityAndRecommendation(preparedAlert);
 
+    // On réutilise la table sos_alerts de l'équipe SOSMap, donc on mappe
+    // le device_id dans last_name (pas de colonne dédiée dans leur schéma)
     const { data, error } = await supabase
       .from('sos_alerts')
       .insert([
         {
-          user_id: 'd9999999-e999-f999-a999-b99999999999',
+          user_id: 'd9999999-e999-f999-a999-b99999999999', // UUID factice pour les alertes simulées
           latitude: lat,
           longitude: lng,
           altitude: 0,

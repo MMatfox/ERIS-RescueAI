@@ -70,8 +70,8 @@ async function setupApiKeys() {
     const generatedKeys = [];
 
     for (const client of clients) {
-      const apiKey = await generateApiKey();
-      const keyHash = await hashApiKey(apiKey);
+      const apiKey = generateApiKey();
+      const keyHash = hashApiKey(apiKey);
 
       const keyInfo = {
         client: client.name,

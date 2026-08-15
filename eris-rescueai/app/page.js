@@ -43,7 +43,7 @@ export default function Home() {
   const [simulating, setSimulating] = useState(false);
   const [simResult, setSimResult] = useState(null);
 
-  // Fetch the latest SOS events from backend API
+  // Récupère les derniers événements SOS depuis l'API backend
   const fetchEvents = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     else setRefreshing(true);
@@ -68,7 +68,7 @@ export default function Home() {
     }
   }, [apiKey]);
 
-  // Poll for new events every 6 seconds to show real-time ingestion
+  // Interroge l'API toutes les 6 secondes pour afficher les nouvelles alertes
   useEffect(() => {
     setTimeout(() => {
       fetchEvents(true);
@@ -130,7 +130,7 @@ export default function Home() {
     setSimResult(null);
   };
 
-  // Simulate sending a telemetry SOS signal to the ingest API
+  // Envoie un signal SOS simulé vers l'endpoint d'ingestion
   const submitSimulatedEvent = async (e) => {
     e.preventDefault();
     setSimulating(true);
@@ -175,7 +175,7 @@ export default function Home() {
     }
   };
 
-  // Update event status or duplicate attribute in database
+  // Met à jour le statut d'une alerte dans la base de données
   const updateEventAttribute = async (eventId, updates) => {
     try {
       const headers = {
@@ -223,7 +223,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans flex flex-col selection:bg-rose-500 selection:text-white">
-      { }
       <header className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -261,7 +260,6 @@ export default function Home() {
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         
-        { }
         <section className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between hover:border-zinc-700 transition">
             <span className="text-xs text-zinc-400 font-medium">Alertes Actives</span>
@@ -305,10 +303,8 @@ export default function Home() {
           </div>
         </section>
 
-        { }
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           
-          { }
           <section className="lg:col-span-1 bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4">
             <div className="border-b border-zinc-800 pb-3 flex items-center justify-between">
               <h2 className="text-md font-semibold text-white flex items-center gap-2">
@@ -324,7 +320,6 @@ export default function Home() {
               Utilisez ce module pour envoyer des alertes simulées de l&apos;application mobile ou des boîtiers d&apos;urgence. Le système RescueAI évaluera automatiquement la priorité, détectera les doublons et générera des recommandations par IA.
             </p>
 
-            { }
             <div className="space-y-2">
               <label className="text-xs font-semibold text-zinc-300">Préréglages d&apos;urgence (Vietnam) :</label>
               <div className="grid grid-cols-3 gap-2">
@@ -355,7 +350,6 @@ export default function Home() {
               </div>
             </div>
 
-            { }
             <form onSubmit={submitSimulatedEvent} className="space-y-3 pt-2">
               <div className="space-y-1">
                 <label className="text-xs text-zinc-400 block font-medium">Device ID</label>
@@ -483,7 +477,6 @@ export default function Home() {
             </form>
           </section>
 
-          { }
           <section className="lg:col-span-2 space-y-4">
             
             {/* Carte interactive */}
@@ -499,7 +492,6 @@ export default function Home() {
               />
             </div>
 
-            { }
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
               <div className="flex flex-col md:flex-row md:items-center gap-3 justify-between">
                 <h3 className="text-md font-semibold text-white flex items-center gap-2">
@@ -521,7 +513,6 @@ export default function Home() {
               </div>
 
               <div className="flex flex-wrap gap-4 pt-2 border-t border-zinc-800 text-xs">
-                { }
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-500">Statut :</span>
                   <div className="flex bg-zinc-950 p-0.5 rounded border border-zinc-800">
@@ -552,7 +543,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                { }
                 <div className="flex items-center gap-2">
                   <span className="text-zinc-500">Doublons :</span>
                   <div className="flex bg-zinc-950 p-0.5 rounded border border-zinc-800">
@@ -579,7 +569,6 @@ export default function Home() {
               </div>
             </div>
 
-            { }
             {loading ? (
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center flex flex-col items-center justify-center gap-3">
                 <svg className="animate-spin h-8 w-8 text-rose-500" fill="none" viewBox="0 0 24 24">
@@ -626,7 +615,6 @@ export default function Home() {
                             })}
                           </span>
                           
-                          { }
                           {event.is_duplicate && (
                             <span className="text-[10px] bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded border border-zinc-800 uppercase font-bold tracking-wider">
                               Doublon
@@ -651,7 +639,6 @@ export default function Home() {
                       </div>
 
                       <div className="flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-2.5 md:pt-0 border-zinc-800">
-                        { }
                         <div className={`flex flex-col items-center justify-center rounded-lg px-3 py-1.5 text-center min-w-[70px] ${scoreBg}`}>
                           <span className="text-[9px] uppercase tracking-widest font-extrabold opacity-75">Priorité</span>
                           <span className="text-lg font-black font-mono leading-tight">{event.priority_score}</span>
@@ -678,19 +665,16 @@ export default function Home() {
         </div>
       </main>
 
-      { }
       <footer className="mt-auto border-t border-zinc-800 bg-zinc-900/30 text-center py-6 text-xs text-zinc-500">
         <p>&copy; {new Date().getFullYear()} - ERIS RescueAI Backend Console &bull; Développé pour la gestion d&apos;urgence en conditions dégradées</p>
       </footer>
 
-      { }
       {selectedEvent && isModalOpen && (
         <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-fadeIn">
           <div 
             className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl relative"
             onClick={(e) => e.stopPropagation()}
           >
-            { }
             <div className="border-b border-zinc-800 p-5 flex items-start justify-between bg-zinc-900 sticky top-0 z-10">
               <div>
                 <div className="flex items-center gap-2.5">
@@ -720,10 +704,8 @@ export default function Home() {
               </button>
             </div>
 
-            { }
             <div className="p-6 space-y-5">
               
-              { }
               <div className={`p-4 rounded-xl border flex gap-3 ${
                 selectedEvent.priority_score >= 70 ? 'bg-rose-950/20 border-rose-900/50 text-rose-300' :
                 selectedEvent.priority_score >= 40 ? 'bg-amber-950/25 border-amber-900/40 text-amber-300' :
@@ -738,12 +720,10 @@ export default function Home() {
                 </div>
               </div>
 
-              { }
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-3.5">
                 <span className="text-xs font-semibold text-zinc-300 block">Actions de Triage</span>
                 
                 <div className="flex flex-col sm:flex-row gap-3">
-                  { }
                   <div className="flex-1 space-y-1">
                     <span className="text-[11px] text-zinc-500 block">Changer le statut :</span>
                     <div className="grid grid-cols-3 gap-2">
@@ -767,24 +747,10 @@ export default function Home() {
                       </button>
                     </div>
                   </div>
-
-                  { }
-                  <div className="sm:w-[180px] space-y-1">
-                    <span className="text-[11px] text-zinc-500 block">Gestion des doublons :</span>
-                    <button
-                      onClick={() => updateEventAttribute(selectedEvent.id, { is_duplicate: !selectedEvent.is_duplicate })}
-                      className={`w-full py-1.5 px-2.5 rounded text-xs transition font-semibold border flex items-center justify-center gap-1.5 ${selectedEvent.is_duplicate ? 'bg-zinc-800 border-zinc-700 text-zinc-300' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-750 text-zinc-500 hover:text-zinc-300'}`}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 14h6"/><path d="M12 11v6"/></svg>
-                      {selectedEvent.is_duplicate ? 'Considérer Réelet' : 'Signaler Doublon'}
-                    </button>
-                  </div>
                 </div>
               </div>
 
-              { }
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                { }
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2.5">
                   <span className="text-xs font-semibold text-zinc-300 block">Coordonnées Géographiques</span>
                   <div className="space-y-1 text-xs">
@@ -814,7 +780,6 @@ export default function Home() {
                   </div>
                 </div>
 
-                { }
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2.5">
                   <span className="text-xs font-semibold text-zinc-300 block">Évaluation de Priorité</span>
                   <div className="space-y-1 text-xs">
@@ -844,7 +809,6 @@ export default function Home() {
                 </div>
               </div>
 
-              { }
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2.5">
                 <span className="text-xs font-semibold text-zinc-300 block">Dossier Médical de l&apos;Abonné</span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
@@ -869,7 +833,6 @@ export default function Home() {
                 </div>
               </div>
 
-              { }
               <div className="space-y-1.5">
                 <span className="text-xs font-semibold text-zinc-300 block">Payload JSON Ingesté</span>
                 <pre className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-xs font-mono text-zinc-400 overflow-x-auto max-h-[160px]">
@@ -879,7 +842,6 @@ export default function Home() {
 
             </div>
 
-            { }
             <div className="border-t border-zinc-800 p-4 bg-zinc-900 flex justify-end">
               <button
                 onClick={() => { setSelectedEvent(null); setIsModalOpen(false); }}

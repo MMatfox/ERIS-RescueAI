@@ -160,12 +160,12 @@ export function generateRecommendation(alert) {
   return parts.join(' ');
 }
 
-// Cache global pour éviter d'appeler l'API OpenRouter/Ollama en boucle sur les mêmes alertes
+// Cache global pour éviter d'appeler l'API en boucle sur les mêmes alertes
 if (!global.aiCache) {
   global.aiCache = new Map();
 }
 
-// Modèle de neurone Perceptron local (Machine Learning L3)
+// Perceptron simple pour classifier la priorité sans appel réseau
 function sigmoid(x) {
   return 1 / (1 + Math.exp(-x));
 }
@@ -194,7 +194,7 @@ export function classifyPriorityML(sensorData, batteryLevel, medicalConditions, 
     f_notes_critical = Math.min(count * 0.4, 1.0);
   }
 
-  // Poids du modèle entraînés heuristiquement
+  // Poids ajustés manuellement selon les cas d'usage
   const w_bias = -1.2; 
   const w_crash = 3.2;
   const w_fall = 2.0;
@@ -274,10 +274,11 @@ Répondez STRICTEMENT au format JSON suivant (pas de texte additionnel, pas de m
 
   const geminiKey = process.env.GEMINI_API_KEY || (openRouterKey && (openRouterKey.startsWith("AIzaSy") || openRouterKey.startsWith("AQ.")) ? openRouterKey : null);
 
-  // Option A : LLM officiel Google Gemini (via Google AI Studio, 100% gratuit et non partagé)
+  // Option A : Appel à l'API Google Gemini si la clé est configurée
   if (hasConnection && geminiKey) {
     const geminiModels = [
       "gemini-3.5-flash",
+      "gemini-2.5-flash",
       "gemini-2.0-flash"
     ];
 
@@ -313,7 +314,7 @@ Répondez STRICTEMENT au format JSON suivant (pas de texte additionnel, pas de m
     }
   }
 
-  // Option B : LLM via OpenRouter (avec clé API et basculement automatique de modèle gratuit)
+  // Option B : Basculement sur OpenRouter si Gemini n'est pas disponible
   if (hasConnection && openRouterKey && !openRouterKey.startsWith("AIzaSy") && !openRouterKey.startsWith("AQ.")) {
     const freeModels = [
       "meta-llama/llama-3.2-3b-instruct:free",
@@ -360,7 +361,7 @@ Répondez STRICTEMENT au format JSON suivant (pas de texte additionnel, pas de m
     console.warn("All OpenRouter models failed or were rate-limited. Falling back to local ML model.");
   }
 
-  // Option C : Modèle Machine Learning Perceptron local (100% gratuit, sans clé API, s'exécute pour tout le monde)
+  // Option C : Repli sur le modèle local si aucune API n'est accessible
   const result = {
     priority_score: localScore,
     ai_recommendation: localRec

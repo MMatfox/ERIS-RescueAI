@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { calculatePriorityScore, generateRecommendation, getAlertPriorityAndRecommendation } from '@/lib/ai/localAiEngine';
+import { getAlertPriorityAndRecommendation } from '@/lib/ai/localAiEngine';
 import { authenticateApiKey } from '@/lib/auth/middleware';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
