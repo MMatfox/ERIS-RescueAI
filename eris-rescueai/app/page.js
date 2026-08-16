@@ -2,6 +2,7 @@
  
 import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { translations } from '../lib/translations';
 
 const AlertsMap = dynamic(() => import('../components/AlertsMap'), {
   ssr: false,
@@ -21,6 +22,9 @@ const AlertsMap = dynamic(() => import('../components/AlertsMap'), {
 
 export default function Home() {
   const apiKey = process.env.NEXT_PUBLIC_API_KEY || '';
+
+  const [lang, setLang] = useState('fr');
+  const t = translations[lang];
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +62,7 @@ export default function Home() {
       if (json.success) {
         setEvents(json.data || []);
       } else {
-        console.error("Erreur:", json.error);
+        console.error(t.error, json.error);
       }
     } catch (err) {
       console.error("Error fetching events:", err);
@@ -163,13 +167,13 @@ export default function Home() {
       });
       const json = await response.json();
       if (json.success) {
-        setSimResult({ success: true, message: "Alerte SOS ingérée avec succès !" });
+        setSimResult({ success: true, message: t.successIngest });
         await fetchEvents(true);
       } else {
-        setSimResult({ success: false, message: `Erreur: ${json.error}` });
+        setSimResult({ success: false, message: `${t.error} ${json.error}` });
       }
     } catch (err) {
-      setSimResult({ success: false, message: `Erreur réseau: ${err.message}` });
+      setSimResult({ success: false, message: `${t.networkError} ${err.message}` });
     } finally {
       setSimulating(false);
     }
@@ -232,19 +236,28 @@ export default function Home() {
             </span>
             <div>
               <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-                ERIS <span className="text-rose-500 font-light">RescueAI</span> Hub
+                {t.hubTitle.split(' ')[0]} <span className="text-rose-500 font-light">{t.hubTitle.split(' ')[1]}</span> {t.hubTitle.split(' ').slice(2).join(' ')}
               </h1>
-              <p className="text-xs text-zinc-400">Plateforme d&apos;ingestion, de filtrage et de priorisation des SOS</p>
+              <p className="text-xs text-zinc-400">{t.hubSubtitle}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value)}
+              className="bg-zinc-800 text-zinc-300 text-sm rounded-lg px-2 py-1.5 border border-zinc-700 focus:outline-none focus:border-rose-500 transition"
+            >
+              <option value="fr">FR</option>
+              <option value="en">EN</option>
+              <option value="vi">VI</option>
+            </select>
             {refreshing && (
               <span className="text-xs text-zinc-400 animate-pulse flex items-center gap-1.5 bg-zinc-800/80 px-2.5 py-1 rounded-md">
                 <svg className="animate-spin h-3.5 w-3.5 text-rose-500" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Mise à jour...
+                {t.updating}
               </span>
             )}
             <button
@@ -252,7 +265,7 @@ export default function Home() {
               className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white px-3 py-1.5 rounded-lg text-sm transition flex items-center gap-1.5 font-medium border border-zinc-700"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
-              Rafraîchir
+              {t.refresh}
             </button>
           </div>
         </div>
@@ -262,43 +275,43 @@ export default function Home() {
         
         <section className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between hover:border-zinc-700 transition">
-            <span className="text-xs text-zinc-400 font-medium">Alertes Actives</span>
+            <span className="text-xs text-zinc-400 font-medium">{t.activeAlerts}</span>
             <div className="flex items-baseline gap-2 mt-2">
               <span className="text-3xl font-bold text-white">{activeEvents}</span>
-              <span className="text-xs text-amber-500 font-medium">Non résolues</span>
+              <span className="text-xs text-amber-500 font-medium">{t.unresolved}</span>
             </div>
           </div>
           
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between hover:border-zinc-700 transition relative overflow-hidden">
             <div className="absolute top-0 right-0 h-1 w-full bg-rose-500 animate-pulse"></div>
-            <span className="text-xs text-zinc-400 font-medium">Priorités Critiques</span>
+            <span className="text-xs text-zinc-400 font-medium">{t.criticalPriorities}</span>
             <div className="flex items-baseline gap-2 mt-2">
               <span className="text-3xl font-bold text-rose-500">{criticalEvents}</span>
-              <span className="text-xs text-rose-400/80 bg-rose-950/50 px-1.5 py-0.5 rounded border border-rose-900">Score &ge; 70</span>
+              <span className="text-xs text-rose-400/80 bg-rose-950/50 px-1.5 py-0.5 rounded border border-rose-900">{t.score} 70</span>
             </div>
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between hover:border-zinc-700 transition">
-            <span className="text-xs text-zinc-400 font-medium">Doublons Identifiés</span>
+            <span className="text-xs text-zinc-400 font-medium">{t.duplicates}</span>
             <div className="flex items-baseline gap-2 mt-2">
               <span className="text-3xl font-bold text-zinc-400">{duplicateEvents}</span>
-              <span className="text-xs text-zinc-500">Filtrés</span>
+              <span className="text-xs text-zinc-500">{t.filtered}</span>
             </div>
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between hover:border-zinc-700 transition">
-            <span className="text-xs text-zinc-400 font-medium">Alertes Résolues</span>
+            <span className="text-xs text-zinc-400 font-medium">{t.resolvedAlerts}</span>
             <div className="flex items-baseline gap-2 mt-2">
               <span className="text-3xl font-bold text-emerald-500">{resolvedEvents}</span>
-              <span className="text-xs text-emerald-500/85">Archivées</span>
+              <span className="text-xs text-emerald-500/85">{t.archived}</span>
             </div>
           </div>
 
           <div className="col-span-2 lg:col-span-1 bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col justify-between hover:border-zinc-700 transition">
-            <span className="text-xs text-zinc-400 font-medium">Total Ingestions</span>
+            <span className="text-xs text-zinc-400 font-medium">{t.totalIngestions}</span>
             <div className="flex items-baseline gap-2 mt-2">
               <span className="text-3xl font-bold text-white">{totalEvents}</span>
-              <span className="text-xs text-zinc-400">Signaux reçus</span>
+              <span className="text-xs text-zinc-400">{t.signalsReceived}</span>
             </div>
           </div>
         </section>
@@ -309,7 +322,7 @@ export default function Home() {
             <div className="border-b border-zinc-800 pb-3 flex items-center justify-between">
               <h2 className="text-md font-semibold text-white flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-rose-500"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 17V7"/><path d="M15 9l-3 3 3 3"/></svg>
-                Simulateur d&apos;API Ingest
+                {t.simulatorTitle}
               </h2>
               <span className="text-xs bg-rose-950 text-rose-400 px-2 py-0.5 rounded font-mono border border-rose-900/50">
                 POST /api/sos/ingest
@@ -317,11 +330,11 @@ export default function Home() {
             </div>
 
             <p className="text-xs text-zinc-400 leading-relaxed">
-              Utilisez ce module pour envoyer des alertes simulées de l&apos;application mobile ou des boîtiers d&apos;urgence. Le système RescueAI évaluera automatiquement la priorité, détectera les doublons et générera des recommandations par IA.
+              {t.simulatorDesc}
             </p>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-zinc-300">Préréglages d&apos;urgence (Vietnam) :</label>
+              <label className="text-xs font-semibold text-zinc-300">{t.presetsTitle}</label>
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
@@ -329,7 +342,7 @@ export default function Home() {
                   className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2.5 py-2 rounded text-xs transition border border-zinc-700/80 font-medium flex flex-col items-center gap-1 text-center"
                 >
                   <span>🤸</span>
-                  <span>Chute Grave</span>
+                  <span>{t.presetFall}</span>
                 </button>
                 <button
                   type="button"
@@ -337,7 +350,7 @@ export default function Home() {
                   className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2.5 py-2 rounded text-xs transition border border-zinc-700/80 font-medium flex flex-col items-center gap-1 text-center"
                 >
                   <span>🚗</span>
-                  <span>Crash Auto</span>
+                  <span>{t.presetCrash}</span>
                 </button>
                 <button
                   type="button"
@@ -345,14 +358,14 @@ export default function Home() {
                   className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-2.5 py-2 rounded text-xs transition border border-zinc-700/80 font-medium flex flex-col items-center gap-1 text-center"
                 >
                   <span>🚨</span>
-                  <span>SOS Manuel</span>
+                  <span>{t.presetManual}</span>
                 </button>
               </div>
             </div>
 
             <form onSubmit={submitSimulatedEvent} className="space-y-3 pt-2">
               <div className="space-y-1">
-                <label className="text-xs text-zinc-400 block font-medium">Device ID</label>
+                <label className="text-xs text-zinc-400 block font-medium">{t.deviceId}</label>
                 <input
                   type="text"
                   required
@@ -365,7 +378,7 @@ export default function Home() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-xs text-zinc-400 block font-medium">Latitude</label>
+                  <label className="text-xs text-zinc-400 block font-medium">{t.latitude}</label>
                   <input
                     type="text"
                     required
@@ -375,7 +388,7 @@ export default function Home() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-zinc-400 block font-medium">Longitude</label>
+                  <label className="text-xs text-zinc-400 block font-medium">{t.longitude}</label>
                   <input
                     type="text"
                     required
@@ -388,20 +401,20 @@ export default function Home() {
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-xs text-zinc-400 block font-medium">Force de l&apos;impact</label>
+                  <label className="text-xs text-zinc-400 block font-medium">{t.impactForce}</label>
                   <select
                     value={simImpact}
                     onChange={(e) => setSimImpact(e.target.value)}
                     className="w-full bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1.5 text-sm text-zinc-200 focus:outline-none focus:border-rose-500 transition"
                   >
-                    <option value="none">Aucun (0G)</option>
-                    <option value="low">Faible</option>
-                    <option value="high">Élevé (Crash/Chute)</option>
-                    <option value="extreme">Extrême (&gt;10G)</option>
+                    <option value="none">{t.impactNone}</option>
+                    <option value="low">{t.impactLow}</option>
+                    <option value="high">{t.impactHigh}</option>
+                    <option value="extreme">{t.impactExtreme}</option>
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-zinc-400 block font-medium">Batterie (%)</label>
+                  <label className="text-xs text-zinc-400 block font-medium">{t.battery}</label>
                   <input
                     type="number"
                     min="0"
@@ -414,7 +427,7 @@ export default function Home() {
               </div>
 
               <div className="bg-zinc-950 border border-zinc-800 rounded p-3 space-y-2">
-                <span className="text-xs font-semibold text-zinc-300 block">Signaux de Capteurs</span>
+                <span className="text-xs font-semibold text-zinc-300 block">{t.sensorSignals}</span>
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
                     <input
@@ -423,7 +436,7 @@ export default function Home() {
                       onChange={(e) => setSimFall(e.target.checked)}
                       className="accent-rose-500 h-4 w-4 rounded"
                     />
-                    <span>Chute détectée (Accéléromètre)</span>
+                    <span>{t.fallDetected}</span>
                   </label>
                   
                   <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
@@ -433,7 +446,7 @@ export default function Home() {
                       onChange={(e) => setSimCrash(e.target.checked)}
                       className="accent-rose-500 h-4 w-4 rounded"
                     />
-                    <span>Accident routier (G-Sensor)</span>
+                    <span>{t.crashDetected}</span>
                   </label>
 
                   <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer">
@@ -443,7 +456,7 @@ export default function Home() {
                       onChange={(e) => setSimInactivity(e.target.checked)}
                       className="accent-rose-500 h-4 w-4 rounded"
                     />
-                    <span>Absence de mouvement (Inactivité)</span>
+                    <span>{t.inactivity}</span>
                   </label>
                 </div>
               </div>
@@ -459,12 +472,12 @@ export default function Home() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    Transmission en cours...
+                    {t.transmitting}
                   </>
                 ) : (
                   <>
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-                    Transmettre le signal SOS
+                    {t.transmit}
                   </>
                 )}
               </button>
@@ -496,7 +509,7 @@ export default function Home() {
               <div className="flex flex-col md:flex-row md:items-center gap-3 justify-between">
                 <h3 className="text-md font-semibold text-white flex items-center gap-2">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-400"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6" y1="6" y2="6.01"/><line x1="6" x2="6" y1="18" y2="18.01"/></svg>
-                  Flux de Données Ingestées ({filteredEvents.length})
+                  {t.dataStream} ({filteredEvents.length})
                 </h3>
                 <div className="relative flex-1 max-w-sm">
                   <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-500">
@@ -507,62 +520,62 @@ export default function Home() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full bg-zinc-950 border border-zinc-800 rounded-lg pl-9 pr-4 py-1.5 text-sm text-zinc-300 focus:outline-none focus:border-rose-500 transition"
-                    placeholder="Filtrer par Device ID, recommandation..."
+                    placeholder={t.searchPlaceholder}
                   />
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-4 pt-2 border-t border-zinc-800 text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="text-zinc-500">Statut :</span>
+                  <span className="text-zinc-500">{t.statusLabel}</span>
                   <div className="flex bg-zinc-950 p-0.5 rounded border border-zinc-800">
                     <button
                       onClick={() => setStatusFilter('all')}
                       className={`px-2 py-1 rounded transition ${statusFilter === 'all' ? 'bg-zinc-800 text-white font-medium' : 'text-zinc-400 hover:text-zinc-200'}`}
                     >
-                      Tous
+                      {t.filterAll}
                     </button>
                     <button
                       onClick={() => setStatusFilter('pending')}
                       className={`px-2 py-1 rounded transition ${statusFilter === 'pending' ? 'bg-amber-500/10 text-amber-500 font-medium' : 'text-zinc-400 hover:text-zinc-200'}`}
                     >
-                      En attente
+                      {t.filterPending}
                     </button>
                     <button
                       onClick={() => setStatusFilter('in_progress')}
                       className={`px-2 py-1 rounded transition ${statusFilter === 'in_progress' ? 'bg-sky-500/10 text-sky-400 font-medium' : 'text-zinc-400 hover:text-zinc-200'}`}
                     >
-                      En cours
+                      {t.filterInProgress}
                     </button>
                     <button
                       onClick={() => setStatusFilter('resolved')}
                       className={`px-2 py-1 rounded transition ${statusFilter === 'resolved' ? 'bg-emerald-500/10 text-emerald-500 font-medium' : 'text-zinc-400 hover:text-zinc-200'}`}
                     >
-                      Résolu
+                      {t.filterResolved}
                     </button>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-zinc-500">Doublons :</span>
+                  <span className="text-zinc-500">{t.duplicatesLabel}</span>
                   <div className="flex bg-zinc-950 p-0.5 rounded border border-zinc-800">
                     <button
                       onClick={() => setShowDuplicates('all')}
                       className={`px-2 py-1 rounded transition ${showDuplicates === 'all' ? 'bg-zinc-800 text-white' : 'text-zinc-400'}`}
                     >
-                      Afficher tout
+                      {t.showAll}
                     </button>
                     <button
                       onClick={() => setShowDuplicates('no_duplicates')}
                       className={`px-2 py-1 rounded transition ${showDuplicates === 'no_duplicates' ? 'bg-zinc-800 text-white' : 'text-zinc-400'}`}
                     >
-                      Masquer doublons
+                      {t.hideDuplicates}
                     </button>
                     <button
                       onClick={() => setShowDuplicates('only_duplicates')}
                       className={`px-2 py-1 rounded transition ${showDuplicates === 'only_duplicates' ? 'bg-zinc-800 text-white' : 'text-zinc-400'}`}
                     >
-                      Uniquement doublons
+                      {t.onlyDuplicates}
                     </button>
                   </div>
                 </div>
@@ -575,13 +588,13 @@ export default function Home() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                <span className="text-zinc-400 text-sm">Chargement des alertes depuis Supabase...</span>
+                <span className="text-zinc-400 text-sm">{t.loadingSupabase}</span>
               </div>
             ) : filteredEvents.length === 0 ? (
               <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center text-zinc-500">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 text-zinc-600"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
-                <p className="text-sm font-semibold">Aucun événement ne correspond à vos filtres.</p>
-                <p className="text-xs text-zinc-600 mt-1">Envoyez une alerte d&apos;urgence à l&apos;aide du simulateur pour populer le flux.</p>
+                <p className="text-sm font-semibold">{t.noEvents}</p>
+                <p className="text-xs text-zinc-600 mt-1">{t.sendEventPrompt}</p>
               </div>
             ) : (
               <div className="space-y-3.5">
@@ -609,7 +622,7 @@ export default function Home() {
                           <span className="font-mono text-sm font-semibold text-white tracking-tight">{event.device_id}</span>
                           <span className="text-zinc-600 text-[10px]">&bull;</span>
                           <span className="text-xs text-zinc-400">
-                            {new Date(event.created_at || event.timestamp).toLocaleString('fr-FR', {
+                            {new Date(event.created_at || event.timestamp).toLocaleString(lang === 'en' ? 'en-US' : lang === 'vi' ? 'vi-VN' : 'fr-FR', {
                               hour: '2-digit', minute: '2-digit', second: '2-digit',
                               day: '2-digit', month: '2-digit'
                             })}
@@ -617,30 +630,30 @@ export default function Home() {
                           
                           {event.is_duplicate && (
                             <span className="text-[10px] bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded border border-zinc-800 uppercase font-bold tracking-wider">
-                              Doublon
+                              {t.duplicateBadge}
                             </span>
                           )}
                           <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider ${statusStyle}`}>
-                            {event.status === 'pending' ? 'En attente' : event.status === 'in_progress' ? 'En cours' : 'Résolu'}
+                            {event.status === 'pending' ? t.pending : event.status === 'in_progress' ? t.inProgress : t.resolved}
                           </span>
                         </div>
                         
                         <p className="text-xs text-zinc-300 font-normal line-clamp-1 leading-relaxed">
-                          {event.ai_recommendation || 'Aucune recommandation disponible.'}
+                          {event.ai_recommendation || t.noRecommendation}
                         </p>
 
                         <div className="flex gap-4 text-[11px] text-zinc-500 font-mono">
                           <span>Lat: {Number(event.latitude).toFixed(4)}</span>
                           <span>Lng: {Number(event.longitude).toFixed(4)}</span>
                           {event.raw_payload?.battery !== undefined && (
-                            <span>Batterie: {event.raw_payload.battery}%</span>
+                            <span>{t.batteryLabel} {event.raw_payload.battery}%</span>
                           )}
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-2.5 md:pt-0 border-zinc-800">
                         <div className={`flex flex-col items-center justify-center rounded-lg px-3 py-1.5 text-center min-w-[70px] ${scoreBg}`}>
-                          <span className="text-[9px] uppercase tracking-widest font-extrabold opacity-75">Priorité</span>
+                          <span className="text-[9px] uppercase tracking-widest font-extrabold opacity-75">{t.priority}</span>
                           <span className="text-lg font-black font-mono leading-tight">{event.priority_score}</span>
                         </div>
 
@@ -651,7 +664,7 @@ export default function Home() {
                             setIsModalOpen(true);
                           }}
                           className="p-1.5 rounded-lg bg-zinc-800/80 hover:bg-rose-600 hover:text-white border border-zinc-750 text-zinc-400 transition cursor-pointer flex items-center justify-center hover:shadow-md ml-1"
-                          title="Voir les détails de l'alerte"
+                          title={t.viewDetails}
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="m9 18 6-6-6-6"/></svg>
                         </button>
@@ -666,7 +679,7 @@ export default function Home() {
       </main>
 
       <footer className="mt-auto border-t border-zinc-800 bg-zinc-900/30 text-center py-6 text-xs text-zinc-500">
-        <p>&copy; {new Date().getFullYear()} - ERIS RescueAI Backend Console &bull; Développé pour la gestion d&apos;urgence en conditions dégradées</p>
+        <p>{t.footer.replace('{year}', new Date().getFullYear())}</p>
       </footer>
 
       {selectedEvent && isModalOpen && (
@@ -684,16 +697,16 @@ export default function Home() {
                     selectedEvent.status === 'in_progress' ? 'bg-sky-500/15 text-sky-400 border border-sky-500/25' : 
                     'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
                   }`}>
-                    {selectedEvent.status === 'pending' ? 'En attente' : selectedEvent.status === 'in_progress' ? 'En cours' : 'Résolu'}
+                    {selectedEvent.status === 'pending' ? t.pending : selectedEvent.status === 'in_progress' ? t.inProgress : t.resolved}
                   </span>
                   {selectedEvent.is_duplicate && (
                     <span className="text-[10px] bg-zinc-800 text-zinc-500 px-2 py-0.5 rounded border border-zinc-700 uppercase font-bold tracking-wider">
-                      Doublon
+                      {t.duplicateBadge}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-zinc-400 mt-1">
-                  ID Unique: {selectedEvent.id} &bull; Reçu le: {new Date(selectedEvent.created_at || selectedEvent.timestamp).toLocaleString('fr-FR')}
+                  {t.uniqueId} {selectedEvent.id} &bull; {t.receivedOn} {new Date(selectedEvent.created_at || selectedEvent.timestamp).toLocaleString(lang === 'en' ? 'en-US' : lang === 'vi' ? 'vi-VN' : 'fr-FR')}
                 </p>
               </div>
               <button
@@ -713,37 +726,37 @@ export default function Home() {
               }`}>
                 <span className="text-2xl mt-0.5">💡</span>
                 <div className="space-y-1">
-                  <span className="text-xs uppercase tracking-widest font-black opacity-75">Analyse & Recommandation RescueAI</span>
+                  <span className="text-xs uppercase tracking-widest font-black opacity-75">{t.aiAnalysis}</span>
                   <p className="text-sm leading-relaxed font-medium">
-                    {selectedEvent.ai_recommendation || "Aucune analyse disponible."}
+                    {selectedEvent.ai_recommendation || t.noAnalysis}
                   </p>
                 </div>
               </div>
 
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-3.5">
-                <span className="text-xs font-semibold text-zinc-300 block">Actions de Triage</span>
+                <span className="text-xs font-semibold text-zinc-300 block">{t.triageActions}</span>
                 
                 <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1 space-y-1">
-                    <span className="text-[11px] text-zinc-500 block">Changer le statut :</span>
+                    <span className="text-[11px] text-zinc-500 block">{t.changeStatus}</span>
                     <div className="grid grid-cols-3 gap-2">
                       <button
                         onClick={() => updateEventAttribute(selectedEvent.id, { status: 'pending' })}
                         className={`py-1.5 px-2.5 rounded text-xs transition font-semibold border ${selectedEvent.status === 'pending' ? 'bg-amber-500/20 border-amber-500 text-amber-400' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-750 text-zinc-400 hover:text-zinc-200'}`}
                       >
-                        En attente
+                        {t.pending}
                       </button>
                       <button
                         onClick={() => updateEventAttribute(selectedEvent.id, { status: 'in_progress' })}
                         className={`py-1.5 px-2.5 rounded text-xs transition font-semibold border ${selectedEvent.status === 'in_progress' ? 'bg-sky-500/20 border-sky-500 text-sky-400' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-750 text-zinc-400 hover:text-zinc-200'}`}
                       >
-                        En cours
+                        {t.inProgress}
                       </button>
                       <button
                         onClick={() => updateEventAttribute(selectedEvent.id, { status: 'resolved' })}
                         className={`py-1.5 px-2.5 rounded text-xs transition font-semibold border ${selectedEvent.status === 'resolved' ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-750 text-zinc-400 hover:text-zinc-200'}`}
                       >
-                        Résolu
+                        {t.resolved}
                       </button>
                     </div>
                   </div>
@@ -752,18 +765,18 @@ export default function Home() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2.5">
-                  <span className="text-xs font-semibold text-zinc-300 block">Coordonnées Géographiques</span>
+                  <span className="text-xs font-semibold text-zinc-300 block">{t.geoCoords}</span>
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between py-1 border-b border-zinc-900">
-                      <span className="text-zinc-500">Latitude</span>
+                      <span className="text-zinc-500">{t.latitude}</span>
                       <span className="font-mono text-zinc-300">{selectedEvent.latitude}</span>
                     </div>
                     <div className="flex justify-between py-1 border-b border-zinc-900">
-                      <span className="text-zinc-500">Longitude</span>
+                      <span className="text-zinc-500">{t.longitude}</span>
                       <span className="font-mono text-zinc-300">{selectedEvent.longitude}</span>
                     </div>
                     <div className="flex justify-between py-1 border-b border-zinc-900">
-                      <span className="text-zinc-500">Altitude</span>
+                      <span className="text-zinc-500">{t.altitude}</span>
                       <span className="font-mono text-zinc-300">{selectedEvent.raw_payload?.altitude !== undefined ? `${selectedEvent.raw_payload.altitude} m` : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between py-1">
@@ -774,35 +787,35 @@ export default function Home() {
                         rel="noreferrer"
                         className="text-rose-400 hover:text-rose-300 hover:underline transition font-semibold"
                       >
-                        Ouvrir la carte &nearr;
+                        {t.mapLink}
                       </a>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2.5">
-                  <span className="text-xs font-semibold text-zinc-300 block">Évaluation de Priorité</span>
+                  <span className="text-xs font-semibold text-zinc-300 block">{t.priorityEval}</span>
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between py-1 border-b border-zinc-900">
-                      <span className="text-zinc-500">Score Tri</span>
+                      <span className="text-zinc-500">{t.triageScore}</span>
                       <span className="font-mono text-white font-bold">{selectedEvent.priority_score} / 100</span>
                     </div>
                     <div className="flex justify-between py-1 border-b border-zinc-900">
-                      <span className="text-zinc-500">Gravité de l&apos;impact</span>
-                      <span className="font-mono text-zinc-300">{selectedEvent.raw_payload?.impact || 'Aucun'}</span>
+                      <span className="text-zinc-500">{t.impactForce}</span>
+                      <span className="font-mono text-zinc-300">{selectedEvent.raw_payload?.impact || t.impactNone}</span>
                     </div>
                     <div className="flex justify-between py-1 border-b border-zinc-900">
-                      <span className="text-zinc-500">État de batterie</span>
-                      <span className="font-mono text-zinc-300">{selectedEvent.raw_payload?.battery !== undefined ? `${selectedEvent.raw_payload.battery}%` : 'Inconnu'}</span>
+                      <span className="text-zinc-500">{t.battery}</span>
+                      <span className="font-mono text-zinc-300">{selectedEvent.raw_payload?.battery !== undefined ? `${selectedEvent.raw_payload.battery}%` : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between py-1">
-                      <span className="text-zinc-500">Type de Capteurs</span>
+                      <span className="text-zinc-500">{t.sensorType}</span>
                       <span className="font-mono text-zinc-300">
                         {[
-                          selectedEvent.raw_payload?.fall_detected ? 'Chute' : '',
-                          selectedEvent.raw_payload?.crash_detected ? 'Crash' : '',
-                          selectedEvent.raw_payload?.inactivity ? 'Inactivité' : ''
-                        ].filter(Boolean).join(', ') || 'Manuel (Bouton SOS)'}
+                          selectedEvent.raw_payload?.fall_detected ? t.fall : '',
+                          selectedEvent.raw_payload?.crash_detected ? t.crash : '',
+                          selectedEvent.raw_payload?.inactivity ? t.inactivitySensor : ''
+                        ].filter(Boolean).join(', ') || t.manualSOS}
                       </span>
                     </div>
                   </div>
@@ -810,31 +823,31 @@ export default function Home() {
               </div>
 
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-2.5">
-                <span className="text-xs font-semibold text-zinc-300 block">Dossier Médical de l&apos;Abonné</span>
+                <span className="text-xs font-semibold text-zinc-300 block">{t.medicalRecord}</span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 text-xs">
                   <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/80">
-                    <span className="text-zinc-500 block mb-1 font-medium">Groupe Sanguin</span>
+                    <span className="text-zinc-500 block mb-1 font-medium">{t.bloodType}</span>
                     <span className="font-mono text-rose-400 font-bold text-sm bg-rose-950/20 px-2 py-0.5 rounded border border-rose-900/40 inline-block">
                       {selectedEvent.raw_payload?.blood_type || 'O+'}
                     </span>
                   </div>
                   <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/80">
-                    <span className="text-zinc-500 block mb-1 font-medium">Allergies Signalées</span>
+                    <span className="text-zinc-500 block mb-1 font-medium">{t.allergies}</span>
                     <span className="text-zinc-300 font-semibold">
-                      {selectedEvent.raw_payload?.allergies && selectedEvent.raw_payload.allergies !== 'None' ? selectedEvent.raw_payload.allergies : 'Aucune allergie connue'}
+                      {selectedEvent.raw_payload?.allergies && selectedEvent.raw_payload.allergies !== 'None' ? selectedEvent.raw_payload.allergies : t.noAllergies}
                     </span>
                   </div>
                   <div className="bg-zinc-900/60 p-3 rounded-lg border border-zinc-800/80">
-                    <span className="text-zinc-500 block mb-1 font-medium">Antécédents / Maladies</span>
+                    <span className="text-zinc-500 block mb-1 font-medium">{t.conditions}</span>
                     <span className="text-zinc-300 font-semibold">
-                      {selectedEvent.raw_payload?.medical_conditions && selectedEvent.raw_payload.medical_conditions !== 'None' ? selectedEvent.raw_payload.medical_conditions : 'Aucun antécédent majeur'}
+                      {selectedEvent.raw_payload?.medical_conditions && selectedEvent.raw_payload.medical_conditions !== 'None' ? selectedEvent.raw_payload.medical_conditions : t.noConditions}
                     </span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <span className="text-xs font-semibold text-zinc-300 block">Payload JSON Ingesté</span>
+                <span className="text-xs font-semibold text-zinc-300 block">{t.payloadJson}</span>
                 <pre className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-xs font-mono text-zinc-400 overflow-x-auto max-h-[160px]">
                   {JSON.stringify(selectedEvent.raw_payload, null, 2)}
                 </pre>
@@ -847,7 +860,7 @@ export default function Home() {
                 onClick={() => { setSelectedEvent(null); setIsModalOpen(false); }}
                 className="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 px-4 py-2 rounded-lg text-sm font-semibold transition border border-zinc-750"
               >
-                Fermer
+                {t.close}
               </button>
             </div>
 
