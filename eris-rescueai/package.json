@@ -2,15 +2,24 @@
   "name": "eris-rescueai",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "api:setup": "node scripts/setup-api-keys.js",
+    "api:list": "node scripts/manage-api-keys.js list",
+    "api:create": "node scripts/manage-api-keys.js create",
+    "api:revoke": "node scripts/manage-api-keys.js revoke",
+    "api:test": "node scripts/test-api-keys.js",
+    "api:create-dev-key": "node scripts/create-dev-key.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
-    "next": "^16.2.6",
+    "dotenv": "^16.3.1",
+    "leaflet": "^1.9.4",
+    "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
